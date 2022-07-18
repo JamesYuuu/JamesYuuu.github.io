@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search> 
+  
+  
+    
+    <entry>
+      <title>GalGame CG提取——ExHIBIT引擎篇</title>
+      <link href="/2022/06/01/GalGame%E8%A7%A3%E5%8C%85(ExHIBIT)/"/>
+      <url>/2022/06/01/GalGame%E8%A7%A3%E5%8C%85(ExHIBIT)/</url>
+      
+        <content type="html"><![CDATA[<h2 id="游戏引擎">游戏引擎</h2><p>ExHIBIT引擎</p><h2 id="主要使用厂商">主要使用厂商</h2><p>Skyfish社及其子社，Moonstone社及其子社</p><h2 id="游戏文件结构">游戏文件结构</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">├──fonts</span><br><span class="line">├──res</span><br><span class="line">│  ├──c</span><br><span class="line">│  ├──g</span><br><span class="line">│  │  ├──ch</span><br><span class="line">│  │  ├──ev</span><br><span class="line">│  │  ├──gn</span><br><span class="line">│  │  └──sy</span><br><span class="line">│  └──s</span><br><span class="line">│     ├──e</span><br><span class="line">│     └──m</span><br><span class="line">├──rld</span><br><span class="line">└──userdata</span><br></pre></td></tr></table></figure><h3 id="fonts">fonts</h3><p>fonts文件夹中存放字体文件。</p><h3 id="rld">rld</h3><p>rld文件夹中存放格式为.rld的剧本文件。</p><h3 id="userdata">userdata</h3><p>userdata文件夹中存放存档。</p><h3 id="res">res</h3><p>res文件夹中存放游戏资源。</p><h4 id="c">c</h4><p>c文件夹下存放格式为.rnf的游戏脚本文件</p><h4 id="g">g</h4><p>g文件夹下存放格式为.gyu的游戏图片文件，分为四个文件夹。</p><h5 id="ch">ch</h5><p>存放游戏立绘。</p><h5 id="ev">ev</h5><p>存放游戏CG。</p><h5 id="gn">gn</h5><p>存放效果图片。</p><h5 id="sy">sy</h5><p>存放游戏界面所需的系统图片</p><h4 id="s">s</h4><p>s文件下存放游戏的声音文件，分为两个文件夹。</p><h5 id="e">e</h5><p>存放格式为.wav的游戏配音文件</p><h5 id="m">m</h5><p>存放格式为.ogg的游戏BGM</p><h2 id="解包方法">解包方法</h2><p>游戏的CG以.gyu格式存放在res。通常ev文件夹下分为多个文件夹，通常每个文件夹为游戏的一组包含差分的CG，此外也有文件夹中保存背景图片。</p><h3 id="garbro">Garbro</h3><p>下载地址：<a href="https://github.com/morkt/GARbro">morkt/GARbro:Visual Novels resource browser (github.com)</a></p><p>Garbro是一个非常方便的解包软件，可以直接查看.gyu文件并提取。</p><h3 id="asmodean-gyu2bmp">Asmodean: gyu2bmp</h3><p>下载地址：<ahref="http://asmodean.reverse.net/pages/gyu2bmp.html">asmodean's reverseengineering page - gyu2bmp</a></p><p>Asmodean开发了大量针对性的工具，此处为用于将.gyu转换为.bmp格式的图片，使用方法如下：</p><p>1、新建一个文件夹，将上述res，并将rld文件夹中def.rld也复制到里面</p><p>2、修复CG文件的key：运行下面的bat文件。</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">fixipgyu.exe def.rld</span><br></pre></td></tr></table></figure><p>3、提取CG：运行下面的bat文件</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> /r %%i <span class="keyword">in</span> (*.gyu) <span class="keyword">do</span> gyu2bmp.exe %%i</span><br></pre></td></tr></table></figure><h3 id="后记">后记</h3><p>目前拆包的skyfish及其子社的游戏中，存在一张大图配合多张小块差分CG的情况，目前暂无有效的自动合成办法应对，而moonstone及其子社的游戏中不存在这类情况。</p>]]></content>
+      
+      
+      <categories>
+          
+          <category> CG提取 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> GalGame </tag>
+            
+            <tag> CG提取 </tag>
+            
+            <tag> moonstone </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>苍之彼方的四重奏——四色华彩，奏响彼方</title>
+      <link href="/2022/04/04/%E8%8B%8D%E4%B9%8B%E5%BD%BC%E6%96%B9%E7%9A%84%E5%9B%9B%E9%87%8D%E5%A5%8F/"/>
+      <url>/2022/04/04/%E8%8B%8D%E4%B9%8B%E5%BD%BC%E6%96%B9%E7%9A%84%E5%9B%9B%E9%87%8D%E5%A5%8F/</url>
+      
+        <content type="html"><![CDATA[<p>体育竞技类题材的作品在ACG中极为常见，远的有灌篮高手、黑子的篮球等令人爷青回的作品，近的也有口碑爆棚的乒乓、小排球、Free！这些高燃的新作，大部分的这类体育系作品往往有一套较为标准的设计思路，从新生的加入、基础规则的介绍、平时的训练、个人和团队间的对抗、从地区大赛进军全国大赛等等。体育竞技类作品的框架大多固定，经过多年的发展，对天赋和努力，个人和团队之间的探讨已经达到了一个很高的境界。</p><p><imgsrc="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/1044620_20210816151300_1.png" /></p><span id="more"></span><p>苍彼作为其中的一类，却采用了完整的刻画一个虚构的运动这样的作法，这是极为少见的，更是需要极大的勇气。因为在脱离了现实的参照，想要设计好一个公平的、逻辑严密的运动，也是极难的。当然，高风险同样伴随着高收益，虚构一项运动意味着可以稍微脱离现实和规则的束缚进行原创，更好的发挥，更好的展现主旨。苍彼的故事展开就完全围绕着虚构的FlyingCircus（空竞）展开，大致的设计参考了战斗机空战的缠斗，如果有军迷的读者可千万不要错过哦。</p><p><imgsrc="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/20210816134117_1.jpg" /></p><blockquote><p>无剧透简介：以和明日香的相遇为契机，晶也当上了空竞部的教练。虽说晶也很积极地进行指导，但明日香还刚入门，美咲根本没有干劲，真白没事就会挑刺儿找事，最后甚至跟住在隔壁的莉佳也发生了莫须有的误会，每天过得都可谓是惊心动魄波澜万丈。这时，久奈滨学院与高藤学院空竞部举办的一场合宿活动，让美咲对当代最强的飞空士真藤产生了强烈的竞争意识。而明日香也在和莉佳的比赛中使用高难度竞技技巧，让人感受到她蕴藏的无限潜力。虽然合宿期间也发生了一些大大小小的插曲，但不同的练习环境的确给久奈滨空竞部带来了很大的激励和提高，之后又会发生什么样的故事呢？</p></blockquote><p>苍彼的作画，配乐，演出堪称顶级，三者的完美配合，使得每一场FC比赛都给予我身临其境、血脉贲张的快感，但是Galgame中最重要的是剧情，再怎样顶级的配料，没有优秀的正餐，也只会令人索然无味。苍彼拥有一条极长的共通线，大致占了篇幅的七成作用，虽然大部分是为了刻画FC这项虚构的运动，介绍近未来的世界观而不得不着笔的笔墨，但稀释在其中的日常，稍微有些平淡和乏味，个人觉得节奏的控制不是很好，略有些拖沓。</p><h2 id="明日香线">明日香线</h2><p><imgsrc="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/20210816133636_1.jpg" />明日香线就是少年漫画中带有主角光环的龙傲天剧情，极致的天赋、极致的努力、极致的热爱，再配上天然的性格，让人心生羡慕，又让人心生一些嫉妒。这条线中的男主（玩家）完全起不到一些作用，无所谓什么设计战术，只需要单纯的欣赏明日香从初学者开始各种开挂，一路走向世界大赛的过程。尽管整个过程让人看得热血澎湃，却缺少了一些深度。在明日香心中极为重要的动力“小时候的约定”，尽管有着不断的铺垫，但直到故事的结尾也没有解开，令人心生疑惑。明日香线中另一个败笔就是不合时宜的H场景的插入，在紧张激烈的竞技氛围中，在我期待着下一次空竞大战时，莫名其妙的两人独处一室，晶也一反常态地把明日香推倒，只有让人赶快c过去的冲动。总而言之，明日香线就是单纯的王道热血，少了一些深度。</p><p><imgsrc="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/20210816133700_1.jpg" /></p><h2 id="真白线">真白线</h2><p><imgsrc="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/20210816133809_1.jpg" /></p><p>真白是本作中人气最高的女主了，是唯一拥有FD的女主，其个人线中的甜度可见一斑，经过共通线中整整一话的铺垫，讲真白傲娇可爱的性格展现的淋漓尽致。在个人线中回收了对美咲憧憬的伏笔，展现了她对于友情的珍视，同样也丰满了美咲的形象。真白在自己屋子里扮演玩偶，自我攻略的样子更是萌到爆表，和男主之间感情的走势也是循序渐进，节奏感极好，吃醋徘徊的小细节更是让玩家脸红心跳，最后FC的剧情也算说的过去，完成了对美咲的救赎。总而言之，这是四条线中最甜，最像传统gal的线了，最能体会到恋爱的青春气息。</p><p><imgsrc="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/20210816133818_1.jpg" /></p><h2 id="莉佳线">莉佳线</h2><p>不同学校的设定，在竞技类的gal中反而成为了败笔，尽管通过了邻居的设定来平衡了距离，但共通线中的出现实在是太少了，沦为了单纯发福利的路人，我甚至觉得在真白线中的莉佳，更有着立体感。莉佳的特点就是完美的优等生，拥有极佳的人妻属性，不过在个人线中还是回收了一个共通线中的伏笔，更多地探讨了友情的意义和竞技比赛中规则的意义。但这条线既没有真白线甜，也没有明日香线王道，更没有美咲线有深度，不如换成窗果线，毕竟这个女人可是该死的有趣啊，且和非空竞选手谈恋爱不是更好的调剂吗（笑）。</p><p><imgsrc="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/20210816133838_1.jpg" /></p><p><imgsrc="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/20210816133724_1.jpg" /></p><h2 id="美咲线">美咲线</h2><p>美咲线是真正将苍彼推上一个台阶的“MVP”级别的个人线，她将美咲这样一个看似懒散、放荡不羁、实则自尊心极强、有着复杂少女心的角色塑造的淋漓尽致。她和男主的羁绊也最深，最后成功的回收了开篇的伏笔，令人震撼。最后美咲和两个天才明日香和乾的大战，更是展示了男主在战术层面不断突破的魅力，真正的体现出了空竞中副手的意义。如果说明日香线是绝对的实力碾压，美咲线则更像是智取，有着不一样的魅力。但在我心中，美咲线更多的震撼来自于真实，当美咲发现天赋远胜于自己的明日香时，她的选择是放弃，这更像是普通人不是吗？当天赋不如他人时，再多的努力又有什么意义了，不如在一开始就放弃好了，这样不是还能留点念想，给自己多留一个台阶吗？美咲看似懒散、无所谓的态度，实则是自己极强的好胜心的保护伞，保护了自己的自尊不受到更大的摧残。当然，gal不是现实，美咲在主线中和晶也完成了互相的救赎，在真白线中被晶也和真白共同救赎，体会到了努力本身的意义，努力本身带来的快乐，学会了坦然接受失败。美咲线展示出了竞技体育甚至是人性的黑暗面，为本作带来了升华。但回到现实中，真的能做到这样吗，做到不含杂质的努力，单纯去享受努力本身，或许这才是苍彼为我们带来的思考。</p><p><imgsrc="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/20210816133738_1.jpg" /></p><p>​最后，想作为一个体育迷，简单吐槽一下苍彼的设定，明日香这样才玩了不到一年空竞，就能够打进世界大赛的剧情，实在是有些离谱了。竞技体育远比苍彼中所描写的残酷的多得多得多，更多的人是像晶也一样从小开始不断地训练。像明日香线最后，关掉鞋子平衡器之后的大战，稍微有些对于其他选手努力付出的不尊重，也是对于竞技体育的不尊重。在Gal中寻求太多的真实感是不是搞错了什么（笑），毕竟Gal由于篇幅的限制，苍彼已经做到了极限，我们也可以期待一下今年美咲的FD能不能如约而至了。</p><p><imgsrc="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/20210816134022_1.jpg" /></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> Game </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> GalGame </tag>
+            
+            <tag> Sprite </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>苍之彼方的四重奏Extra1：真白的后宫(X)成长物语</title>
+      <link href="/2022/04/04/%E8%8B%8D%E4%B9%8B%E5%BD%BC%E6%96%B9%E7%9A%84%E5%9B%9B%E9%87%8D%E5%A5%8FExtra1%EF%BC%9A%E7%9C%9F%E7%99%BD%E7%9A%84%E5%90%8E%E5%AE%AB(X)%E6%88%90%E9%95%BF%E7%89%A9%E8%AF%AD/"/>
+      <url>/2022/04/04/%E8%8B%8D%E4%B9%8B%E5%BD%BC%E6%96%B9%E7%9A%84%E5%9B%9B%E9%87%8D%E5%A5%8FExtra1%EF%BC%9A%E7%9C%9F%E7%99%BD%E7%9A%84%E5%90%8E%E5%AE%AB(X)%E6%88%90%E9%95%BF%E7%89%A9%E8%AF%AD/</url>
+      
+        <content type="html"><![CDATA[<p>苍之彼方的四重奏Extra1是由著名冷饭厂雪碧社Sprite发行的以真白为女主角的后宫Galgame，玩家扮演的真白在本作中不但有晶也线，还有美咲线、明日香线、莉佳线等多条百合线，分别截图如下，各位玩家预购从速吧！！（上述都是一本正经的胡说八道）</p><p><imgsrc="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/1340130_20210819163631_1.png" /></p><p><span id="more"></span></p><blockquote><p>无剧透简介：所仰慕的非常喜欢的前辈和能够坦诚内心烦恼，一起努力的志同道合的朋友们，这样靠着鼓起的勇气以及抓住不放的诸多重要的东西，历尽千辛万苦，终于达成了的HappyEnd！！……这意念一闪而过。学习还是一团糟，与莉佳和有梨华的甜点对决也完败，美咲和明日香宣称是“晶也的恋人”!?如此下去的话，前辈会被夺走，自己也会留级，真白乌冬面也会倒闭!就在这时，母亲却突然做出了晶也和真白的一晚约会决定。「做个好吃的便当！再好好打扮一番！」真白如是对晶也宣布。借助大家一臂之力，在约会日期到来之前，为了弥补女性魅力不足的问题而展开突击特训！！到底，晶也和真白是否真的能够迎来HappyEnd呢？</p></blockquote><figure><imgsrc="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/1340130_20210819163601_1.png"alt="真白—晶也" /><figcaption aria-hidden="true">真白—晶也</figcaption></figure><figure><imgsrc="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/1340130_20210817143732_1.png"alt="真白—莉佳" /><figcaption aria-hidden="true">真白—莉佳</figcaption></figure><figure><imgsrc="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/1340130_20210819163533_1.png"alt="真白-明日香" /><figcaption aria-hidden="true">真白-明日香</figcaption></figure><figure><imgsrc="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/1340130_20210819164849_1.png"alt="真白-美咲" /><figcaption aria-hidden="true">真白-美咲</figcaption></figure><h2 id="真白成长的咏叹调">真白成长的咏叹调</h2><p>在苍彼正篇中的真白，更多的是作为美咲的附属品出现，无论做什么事情都和美咲相同，没有自己的主见，就像是一只永远紧盯着主人不放的小猫一般。而本作则完全成为了真白的主场，她开始正视和美咲的感情。作为一部不到4个小时的短篇作品，在剧情上也非常简单直接，通篇围绕真白和晶也的约会展开，大部分的剧情着笔于约会前的准备工作——准备期中考试，练习做便当的厨艺，挑选约会的衣服等等。最后通过约会讲故事推向高潮，为故事画上一个圆满的句号。</p><p><imgsrc="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/1340130_20210819163446_1.png" />真白从原先胆小内向的性格，到现在的逐渐开朗，交上了不少的朋友；由原先美咲身后的小跟班，到现在拯救了美咲的FC生涯，鼓励了晶也复出以及不断的努力。这一切正是借游戏机与晶也结缘和在空竞中的不断努力所带来的，编剧巧妙地在结尾以回忆的形式，将两人的羁绊、两人的互相拯救，一幕一幕的呈现，增加了与前作的关联，也让人有发自心底的感动。</p><p>另外，作为真白内心另一面的小邪神，也在本作中起到了重要的作用，本是用于更加有趣的展现内心活动、活跃气氛，但编剧同样巧妙的将其作为象征，在结尾处安排了真白与邪神的告别，也标志着真白的成长与内心的独立可谓一举两得。最后作为高潮的约会，得益于精彩的演出效果和适当的配乐，糖分同样超标，在此就闲话少叙了，就用几张精彩的CG来管中窥豹。</p><p><imgsrc="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/1340130_20210819163613_1.png" /></p><p><imgsrc="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/1340130_20210819163620_1.png" /></p><h2 id="配角的成功塑造">配角的成功塑造</h2><p>雪碧社除了对于主角的精彩塑造外，对于配角的形象同样也是有所完善。并非在他人的FD中，配角就一定要沦为工具人，有血有肉的配角更能够丰满整个世界观，让故事能够完善，更加真实。本作中，便丰满了美咲的形象，将两者先前的羁绊娓娓道来，将美咲外冷内热的性格展现的淋漓尽致。看似对于真白爱答不理的背后，藏着美咲对于真白默默的复出。例如，美咲其实并不喜欢吃乌冬面，甚至因为小时候吃乌冬面噎着了，甚至有些讨厌乌冬面，但她为了不辜负真白的美意，仍然装着自己很喜欢乌冬面的样子，维护着与真白的友谊，守护着真白的成长，并用若即若离的方式促进着真白独立。</p><p><imgsrc="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/1340130_20210819165049_1.png"alt="虎鱼" />当然还有本篇中戏份很少的莉佳与虎鱼，分别作为真白的“速度型伴侣”和青梅竹马以各自的方式守护者真白，尽自己的全力帮着真白努力应对约会，努力做好便当，努力学好空竞。虎鱼刀子嘴豆腐心的性格与莉佳人妻的属性，都能够在这里得到丰满，而不是单纯的作为推动剧情的工具人出现，让这个架空的世界多了一份温情，也让玩家有身临其境之感。</p><figure><imgsrc="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/1340130_20210819163552_1.png"alt="莉佳" /><figcaption aria-hidden="true">莉佳</figcaption></figure><h2 id="出色的音画表现">出色的音画表现</h2><p>先不说2K分辨率的原画CG算得上是gal中佼佼者了，除了出彩的原画和演出外，配乐也是本作的一大亮点。延续了ElementsGarden稳定的发挥，特别是其中的几首钢琴曲，舒缓悠扬，令人沉浸其中。另外应援团们的表现，恰如其分的吐槽，也使得本作更加有趣，更有了恋爱喜剧的风格，又有谁不喜欢HappyEnd呢？</p><p><imgsrc="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/1340130_20210819165134_1.png" /></p><h2 id="结语">结语</h2><p>少了FC元素的Extra1就已经这样精彩了，谁有能不期待有着大量FC的元素的Extra2呢？雪碧社的最新消息是已经画完了一百多张的CG了，也设计了新的FC战斗场景，就期待一下真正的龙傲天晶也，能否为我们带来精彩的FC表演。最后插播一个最近苍彼六周年的官方投票，美咲居然反杀了真白成为了第一，雪碧社得快马加鞭继续炒冷饭了哟！之前看到吧友说雪碧的官方已经将明日香的Extra3纳入了考虑，并且大部分是恋人的发糖哦，希望能弥补正作中的糖分不足。</p><p><imgsrc="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/1340130_20210819165846_1.png" /></p><p><imgsrc="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/1340130_20210819165808_1.png" /></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> Game </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> GalGame </tag>
+            
+            <tag> Sprite </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+  
+  
+</search>
