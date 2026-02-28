@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="baidu-site-verification" content="PTwOehQpzZ">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.2/css/all.min.css" integrity="sha256-CTSx/A06dm1B063156EVh15m6Y67pAjZZaQc89LLSrU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/themes/blue/pace-theme-minimal.css">
+  <script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous"></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"blog.jamesyuuu.me","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.2","exturl":true,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":true,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="CPU调度基础 进程调度  进程切换和调度  CPU是共享资源，进程按照一定的策略使用CPU资源 当发生进程切换时，原先的进程不再使用CPU，切换到新的进程使用CPU 进程切换场景  进程主动放弃CPU使用权 进程等待IO、等待资源（例如锁） 内核不让进程使用CPU（例如有更高优先级进程要运行）  进程调度需求  决定使用CPU的进程 非抢占式调度和抢占式调度">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CPU调度">
+<meta property="og:url" content="https://blog.jamesyuuu.me/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/CPU%E8%B0%83%E5%BA%A6/index.html">
+<meta property="og:site_name" content="JamesYu&#39;s Hut">
+<meta property="og:description" content="CPU调度基础 进程调度  进程切换和调度  CPU是共享资源，进程按照一定的策略使用CPU资源 当发生进程切换时，原先的进程不再使用CPU，切换到新的进程使用CPU 进程切换场景  进程主动放弃CPU使用权 进程等待IO、等待资源（例如锁） 内核不让进程使用CPU（例如有更高优先级进程要运行）  进程调度需求  决定使用CPU的进程 非抢占式调度和抢占式调度">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/image-20221020104956853.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/image-20221020105039824.png">
+<meta property="article:published_time" content="2022-10-18T01:50:00.000Z">
+<meta property="article:modified_time" content="2026-02-28T13:01:35.714Z">
+<meta property="article:author" content="JamesYu">
+<meta property="article:tag" content="笔记">
+<meta property="article:tag" content="操作系统">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/image-20221020104956853.png">
+
+
+<link rel="canonical" href="https://blog.jamesyuuu.me/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/CPU%E8%B0%83%E5%BA%A6/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://blog.jamesyuuu.me/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/CPU%E8%B0%83%E5%BA%A6/","path":"操作系统/CPU调度/","title":"CPU调度"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>CPU调度 | JamesYu's Hut</title>
+  
+
+
+
+
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/gh/theme-next/theme-next-needmoreshare2@1/needsharebutton.min.css"><style>
+#needsharebutton-postbottom {
+  cursor: pointer;
+  height: 26px;
+  margin-top: 10px;
+  position: relative;
+}
+#needsharebutton-postbottom .btn {
+  border: 1px solid $btn-default-border-color;
+  border-radius: 3px;
+  display: initial;
+  padding: 1px 4px;
+}
+</style>
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css">
+<style>.darkmode--activated{--body-bg-color:#282828;--content-bg-color:#333;--card-bg-color:#555;--text-color:#ccc;--blockquote-color:#bbb;--link-color:#ccc;--link-hover-color:#eee;--brand-color:#ddd;--brand-hover-color:#ddd;--table-row-odd-bg-color:#282828;--table-row-hover-bg-color:#363636;--menu-item-bg-color:#555;--btn-default-bg:#222;--btn-default-color:#ccc;--btn-default-border-color:#555;--btn-default-hover-bg:#666;--btn-default-hover-color:#ccc;--btn-default-hover-border-color:#666;--highlight-background:#282b2e;--highlight-foreground:#a9b7c6;--highlight-gutter-background:#34393d;--highlight-gutter-foreground:#9ca9b6}.darkmode--activated img{opacity:.75}.darkmode--activated img:hover{opacity:.9}.darkmode--activated code{color:#69dbdc;background:0 0}button.darkmode-toggle{z-index:9999}.darkmode-ignore,img{display:flex!important}.beian img{display:inline-block!important}</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">JamesYu's Hut</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Game | Bangumi</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">7</span></a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">3</span></a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">36</span></a></li><li class="menu-item menu-item-观影"><a href="/movies/index.html" rel="section"><i class="fa fa-film fa-fw"></i>观影</a></li><li class="menu-item menu-item-追番"><a href="/bangumis/index.html" rel="section"><i class="fa fa-video-camera fa-fw"></i>追番</a></li><li class="menu-item menu-item-追剧"><a href="/cinemas/index.html" rel="section"><i class="fa fa-television fa-fw"></i>追剧</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#cpu%E8%B0%83%E5%BA%A6%E5%9F%BA%E7%A1%80"><span class="nav-number">1.</span> <span class="nav-text">CPU调度基础</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%9B%E7%A8%8B%E8%B0%83%E5%BA%A6"><span class="nav-number">1.1.</span> <span class="nav-text">进程调度</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%9D%9E%E6%8A%A2%E5%8D%A0%E5%BC%8F%E8%B0%83%E5%BA%A6"><span class="nav-number">1.2.</span> <span class="nav-text">非抢占式调度</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8A%A2%E5%8D%A0%E5%BC%8F%E8%B0%83%E5%BA%A6"><span class="nav-number">1.3.</span> <span class="nav-text">抢占式调度</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E6%8A%A2%E5%8D%A0"><span class="nav-number">1.3.1.</span> <span class="nav-text">为什么要抢占</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8E%E4%B8%AD%E6%96%AD%E8%BF%9B%E8%A1%8C%E6%8A%A2%E5%8D%A0%E5%BC%8F%E8%B0%83%E5%BA%A6"><span class="nav-number">1.3.2.</span> <span class="nav-text">基于中断进行抢占式调度</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%8C%89%E5%8F%AF%E5%90%A6%E5%B1%8F%E8%94%BD%E5%88%92%E5%88%86%E4%B8%AD%E6%96%AD"><span class="nav-number">1.3.2.1.</span> <span class="nav-text">按可否屏蔽划分中断</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%AD%E6%96%AD%E5%A4%84%E7%90%86%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%B5%81%E7%A8%8B"><span class="nav-number">1.3.3.</span> <span class="nav-text">中断处理的基本流程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#io%E4%B8%AD%E6%96%AD%E5%A4%84%E7%90%86"><span class="nav-number">1.3.3.1.</span> <span class="nav-text">I&#x2F;O中断处理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%97%B6%E9%92%9F%E4%B8%AD%E6%96%AD%E5%A4%84%E7%90%86"><span class="nav-number">1.3.3.2.</span> <span class="nav-text">时钟中断处理</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B0%83%E5%BA%A6%E5%99%A8"><span class="nav-number">1.4.</span> <span class="nav-text">调度器</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B0%83%E5%BA%A6%E5%99%A8%E7%9A%84%E5%B7%A5%E4%BD%9C"><span class="nav-number">1.4.1.</span> <span class="nav-text">调度器的工作</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E4%BC%9A%E8%A7%A6%E5%8F%91%E8%B0%83%E5%BA%A6"><span class="nav-number">1.4.2.</span> <span class="nav-text">什么时候会触发调度</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#cpu%E8%B0%83%E5%BA%A6%E7%AE%97%E6%B3%95"><span class="nav-number">2.</span> <span class="nav-text">CPU调度算法</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B0%83%E5%BA%A6%E5%87%86%E5%88%99"><span class="nav-number">2.1.</span> <span class="nav-text">调度准则</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%81%87%E8%AE%BE"><span class="nav-number">2.1.1.</span> <span class="nav-text">假设</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%B8%E7%94%A8%E6%8C%87%E6%A0%87"><span class="nav-number">2.1.2.</span> <span class="nav-text">常用指标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%89%B9%E5%A4%84%E7%90%86%E5%92%8C%E5%AE%9E%E6%97%B6%E4%BA%A4%E4%BA%92%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1%E7%9B%AE%E6%A0%87"><span class="nav-number">2.1.3.</span> <span class="nav-text">批处理和实时交互系统设计目标</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%8D%E5%90%8C%E7%B1%BB%E5%9E%8B%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%B3%BB%E7%BB%9F%E7%9A%84%E9%9C%80%E6%B1%82%E4%B8%8D%E4%B8%80%E6%A0%B7"><span class="nav-number">2.1.3.1.</span> <span class="nav-text">不同类型计算机系统的需求不一样</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%88%E5%88%B0%E5%85%88%E6%9C%8D%E5%8A%A1fcfs%E7%AE%97%E6%B3%95"><span class="nav-number">2.2.</span> <span class="nav-text">先到先服务（FCFS）算法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E7%90%86%E5%BF%B5"><span class="nav-number">2.2.1.</span> <span class="nav-text">核心理念</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BC%98%E7%82%B9%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95"><span class="nav-number">2.2.2.</span> <span class="nav-text">优点：实现简单</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BC%BA%E7%82%B9"><span class="nav-number">2.2.3.</span> <span class="nav-text">缺点</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%80%E7%9F%AD%E6%97%B6%E9%97%B4%E7%AE%97%E6%B3%95"><span class="nav-number">2.3.</span> <span class="nav-text">最短时间算法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%80%E7%9F%AD%E6%97%B6%E9%97%B4%E4%BC%98%E5%85%88stcf%E7%AE%97%E6%B3%95"><span class="nav-number">2.3.1.</span> <span class="nav-text">最短时间优先（STCF）算法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%80%E7%9F%AD%E5%89%A9%E4%BD%99%E6%97%B6%E9%97%B4%E4%BC%98%E5%85%88srtcf%E7%AE%97%E6%B3%95"><span class="nav-number">2.3.2.</span> <span class="nav-text">最短剩余时间优先（SRTCF）算法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BC%98%E7%82%B9%E5%B9%B3%E5%9D%87%E5%93%8D%E5%BA%94%E6%97%B6%E9%97%B4%E7%9F%AD"><span class="nav-number">2.3.3.</span> <span class="nav-text">优点：平均响应时间短</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BC%BA%E7%82%B9-1"><span class="nav-number">2.3.4.</span> <span class="nav-text">缺点</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%97%B6%E9%97%B4%E7%89%87%E8%BD%AE%E8%BD%ACrr%E7%AE%97%E6%B3%95"><span class="nav-number">2.4.</span> <span class="nav-text">时间片轮转（RR）算法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%97%B6%E9%97%B4%E7%89%87%E9%95%BF%E5%BA%A6%E7%9A%84%E9%80%89%E6%8B%A9"><span class="nav-number">2.4.1.</span> <span class="nav-text">时间片长度的选择</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%99%9A%E6%8B%9F%E8%BD%AE%E8%BD%ACvrr%E7%AE%97%E6%B3%95"><span class="nav-number">2.4.2.</span> <span class="nav-text">虚拟轮转（VRR）算法</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%9A%E7%BA%A7%E9%98%9F%E5%88%97mlq%E4%B8%8E%E4%BC%98%E5%85%88%E7%BA%A7%E8%B0%83%E5%BA%A6"><span class="nav-number">2.5.</span> <span class="nav-text">多级队列（MLQ）与优先级调度</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%98%9F%E5%88%97%E4%B9%8B%E9%97%B4"><span class="nav-number">2.5.1.</span> <span class="nav-text">队列之间</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%9A%E7%BA%A7%E5%8F%8D%E9%A6%88%E9%98%9F%E5%88%97mlfq%E7%AE%97%E6%B3%95"><span class="nav-number">2.5.2.</span> <span class="nav-text">多级反馈队列（MLFQ）算法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%89%B9%E5%BE%81"><span class="nav-number">2.5.2.1.</span> <span class="nav-text">特征：</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AC%E5%B9%B3%E5%85%B1%E4%BA%AB%E8%B0%83%E5%BA%A6fss"><span class="nav-number">2.6.</span> <span class="nav-text">公平共享调度（FSS）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%BD%E9%A2%9D%E7%AE%A1%E7%90%86"><span class="nav-number">2.6.1.</span> <span class="nav-text">份额管理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BC%98%E5%85%88%E7%BA%A7%E5%92%8C%E4%BB%BD%E9%A2%9D%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">2.6.2.</span> <span class="nav-text">优先级和份额的区别</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BD%A9%E7%A5%A8%E8%B0%83%E5%BA%A6"><span class="nav-number">2.7.</span> <span class="nav-text">彩票调度</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BD%A9%E7%A5%A8%E6%96%B9%E6%B3%95"><span class="nav-number">2.7.1.</span> <span class="nav-text">彩票方法</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B0%83%E5%BA%A6%E7%AE%97%E6%B3%95%E6%80%BB%E7%BB%93"><span class="nav-number">2.8.</span> <span class="nav-text">调度算法总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E6%97%B6%E8%B0%83%E5%BA%A6"><span class="nav-number">2.9.</span> <span class="nav-text">实时调度</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%A4%E7%A7%8D%E7%B1%BB%E5%9E%8B%E7%9A%84%E5%AE%9E%E6%97%B6"><span class="nav-number">2.9.1.</span> <span class="nav-text">两种类型的实时</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%87%86%E5%85%A5%E6%8E%A7%E5%88%B6"><span class="nav-number">2.9.2.</span> <span class="nav-text">准入控制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%9F%E7%8E%87%E5%8D%95%E8%B0%83%E8%B0%83%E5%BA%A6"><span class="nav-number">2.9.3.</span> <span class="nav-text">速率单调调度</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%81%87%E8%AE%BE-1"><span class="nav-number">2.9.3.1.</span> <span class="nav-text">假设</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%9F%BA%E6%9C%AC%E6%80%9D%E6%83%B3"><span class="nav-number">2.9.3.2.</span> <span class="nav-text">基本思想</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%80%E6%97%A9%E6%88%AA%E6%AD%A2%E6%97%B6%E9%97%B4%E4%BC%98%E5%85%88%E8%B0%83%E5%BA%A6edf"><span class="nav-number">2.9.4.</span> <span class="nav-text">最早截止时间优先调度（EDF）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%81%87%E8%AE%BE-2"><span class="nav-number">2.9.4.1.</span> <span class="nav-text">假设</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%9F%BA%E6%9C%AC%E6%80%9D%E6%83%B3-1"><span class="nav-number">2.9.4.2.</span> <span class="nav-text">基本思想</span></a></li></ol></li></ol></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="JamesYu"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">JamesYu</p>
+  <div class="site-description" itemprop="description">A Game and Bangumi Database For Private Use</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">36</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL0phbWVzWXV1dQ==" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;JamesYuuu"><i class="fab fa-github fa-fw"></i>GitHub</span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9pbnN0YWdyYW0uY29tL2phbWVzeXUzMg==" title="Instagram → https:&#x2F;&#x2F;instagram.com&#x2F;jamesyu32"><i class="fab fa-instagram fa-fw"></i>Instagram</span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9zcGFjZS5iaWxpYmlsaS5jb20vMTgyODA5NTQ5" title="Bilibili → https:&#x2F;&#x2F;space.bilibili.com&#x2F;182809549"><i class="fab fa-bilibili fa-fw"></i>Bilibili</span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cuemhpaHUuY29tL3Blb3BsZS95aWdlLWRhLXNodWFpLWJpLTQw" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;yige-da-shuai-bi-40"><i class="fab fa-zhihu fa-fw"></i>Zhihu</span>
+      </span>
+  </div>
+  <div class="cc-license animated" itemprop="license">
+    <span class="exturl cc-opacity" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzQuMC9kZWVkLnpo"><img src="https://cdn.jsdelivr.net/npm/@creativecommons/vocabulary@2020.11.3/assets/license_badges/small/by_nc_sa.svg" alt="Creative Commons"></span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+  <span class="exturl github-corner" data-url="aHR0cHM6Ly9naXRodWIuY29tL0phbWVzWXV1dQ==" title="在 GitHub 上关注我" aria-label="在 GitHub 上关注我"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></span>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://blog.jamesyuuu.me/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/CPU%E8%B0%83%E5%BA%A6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="JamesYu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="JamesYu's Hut">
+      <meta itemprop="description" content="A Game and Bangumi Database For Private Use">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="CPU调度 | JamesYu's Hut">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          CPU调度<span class="exturl post-edit-link" data-url="aHR0cHM6Ly9naXRodWIuY29tL0phbWVzWXV1dS9IZXhvLUJsb2cvdHJlZS9tYWluL3NvdXJjZS9fcG9zdHMv5pON5L2c57O757ufL0NQVeiwg+W6pi5tZA==" title="编辑"><i class="fa fa-pen-nib"></i></span>
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2022-10-18 09:50:00" itemprop="dateCreated datePublished" datetime="2022-10-18T09:50:00+08:00">2022-10-18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-02-28 21:01:35" itemprop="dateModified" datetime="2026-02-28T21:01:35+08:00">2026-02-28</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Study/" itemprop="url" rel="index"><span itemprop="name">Study</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>2.6k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>9 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="cpu调度基础">CPU调度基础</h1>
+<h2 id="进程调度">进程调度</h2>
+<ul>
+<li>进程切换和调度
+<ul>
+<li>CPU是共享资源，进程按照一定的策略使用CPU资源</li>
+<li>当发生进程切换时，原先的进程不再使用CPU，切换到新的进程使用CPU</li>
+<li>进程切换场景
+<ul>
+<li>进程主动放弃CPU使用权</li>
+<li>进程等待IO、等待资源（例如锁）</li>
+<li>内核不让进程使用CPU（例如有更高优先级进程要运行）</li>
+</ul></li>
+<li>进程调度需求
+<ul>
+<li>决定使用CPU的进程</li>
+<li>非抢占式调度和抢占式调度</li>
+</ul></li>
+</ul></li>
+</ul>
+<span id="more"></span>
+<h2 id="非抢占式调度">非抢占式调度</h2>
+<p><img src="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/image-20221020104956853.png" alt="image-20221020104956853" style="zoom: 67%;" /></p>
+<ul>
+<li>进程主动放弃CPU使用权（<code>yield</code>)</li>
+<li>进程等待I/O，等待资源或特定事件（<code>block</code>）</li>
+<li>内核调度器直接进行调度（<code>do_scheduler</code>）</li>
+</ul>
+<h2 id="抢占式调度">抢占式调度</h2>
+<p><img src="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/image-20221020105039824.png" alt="image-20221020105039824" style="zoom:67%;" /></p>
+<h3 id="为什么要抢占">为什么要抢占</h3>
+<ul>
+<li>让进程更加公平的使用CPU资源，避免饥饿</li>
+<li>交替使用I/O和计算资源，提升资源的利用率</li>
+<li>有紧急任务（高优先级进程）要先执行</li>
+</ul>
+<h3 id="基于中断进行抢占式调度">基于中断进行抢占式调度</h3>
+<blockquote>
+<p>时钟中断或IO中断发生的时候，进行进程切换</p>
+</blockquote>
+<ul>
+<li>硬件中断
+<ul>
+<li>由外部事件（外部设备）触发，例如时钟中断，硬盘读写请求完成等</li>
+<li>硬件中断产生与当前正在执行的任务无关</li>
+</ul></li>
+<li>软件中断（可编程中断）</li>
+</ul>
+<h4 id="按可否屏蔽划分中断">按可否屏蔽划分中断</h4>
+<ul>
+<li>可屏蔽中断
+<ul>
+<li>可以关闭/开启中断</li>
+</ul></li>
+<li>不可屏蔽中断
+<ul>
+<li>无法恢复的硬件错误等</li>
+</ul></li>
+</ul>
+<h3 id="中断处理的基本流程">中断处理的基本流程</h3>
+<ul>
+<li>CPU检查中断条件是否满足
+<ul>
+<li>有中断请求</li>
+<li>CPU允许中断</li>
+</ul></li>
+<li>如果CPU允许中断，则关中断，保证在处理中断的时候不再响应其他中断</li>
+<li>保存被中断的线程</li>
+<li>判断中断的类型，根据不同的中断类型调用对应的中断处理程序</li>
+<li>执行中断处理程序</li>
+<li>恢复现场</li>
+<li>开中断</li>
+</ul>
+<h4 id="io中断处理">I/O中断处理</h4>
+<ul>
+<li>保存当前进程/线程的上下文</li>
+<li>进行I/O，例如将数据从外设拷贝到内核内存中</li>
+<li>调用调度器</li>
+</ul>
+<h4 id="时钟中断处理">时钟中断处理</h4>
+<ul>
+<li>保存当前进程/线程的上下文</li>
+<li>更新系统时间，递减进程时间片</li>
+<li>调用调度器</li>
+</ul>
+<h2 id="调度器">调度器</h2>
+<h3 id="调度器的工作">调度器的工作</h3>
+<ul>
+<li>保存当前进程/线程的上下文</li>
+<li>选择下一个待运行的进程/线程</li>
+<li>加载相应进程/线程的上下文，并跳转执行</li>
+</ul>
+<h3 id="什么时候会触发调度">什么时候会触发调度</h3>
+<ul>
+<li>进程/线程创建</li>
+<li>进程/线程退出</li>
+<li>I/O阻塞或同步阻塞</li>
+<li>I/O中断</li>
+<li>时钟中断</li>
+</ul>
+<h1 id="cpu调度算法">CPU调度算法</h1>
+<h2 id="调度准则">调度准则</h2>
+<h3 id="假设">假设</h3>
+<ul>
+<li>一个用户运行一个程序，一个程序创建一个线程</li>
+<li>程序之间是独立的</li>
+</ul>
+<h3 id="常用指标">常用指标</h3>
+<ul>
+<li>吞吐率：每秒处理请求数</li>
+<li>响应时间（等待时间）：从提交一个请求到产生响应所用的时间（交互式系统）</li>
+<li>周转时间：从作业提交到作业完成的时间间隔（批处理系统）</li>
+<li>公平性：每个程序是否都有执行机会，防止挨饿</li>
+</ul>
+<h3 id="批处理和实时交互系统设计目标">批处理和实时交互系统设计目标</h3>
+<ul>
+<li>保证公平性</li>
+<li>最大化CPU资源利用率</li>
+<li>最大化吞吐率</li>
+<li>最小化周转时间</li>
+<li>缩短响应时间</li>
+<li>均衡性：满足用户需求且提升计算机系统各部件的利用率</li>
+</ul>
+<h4
+id="不同类型计算机系统的需求不一样">不同类型计算机系统的需求不一样</h4>
+<ul>
+<li>服务器：看重吞吐率、响应时间和公平性</li>
+<li>个人计算机：看重响应时间</li>
+<li>工业控制计算机：看重实时性</li>
+</ul>
+<h2 id="先到先服务fcfs算法">先到先服务（FCFS）算法</h2>
+<blockquote>
+<p>适用于非抢占式调度，适用于批处理系统</p>
+</blockquote>
+<h3 id="核心理念">核心理念</h3>
+<ul>
+<li>一个进程一直运行到结束</li>
+<li>或一直运行到阻塞</li>
+<li>或一直运行到主动放弃CPU</li>
+</ul>
+<h3 id="优点实现简单">优点：实现简单</h3>
+<h3 id="缺点">缺点</h3>
+<ul>
+<li>平均周转时间波动较大
+<ul>
+<li>短进程可能被排到长进程的后面</li>
+</ul></li>
+<li>可能导致I/O资源利用效率低
+<ul>
+<li>CPU密集型应用长期占用CPU，导致I/O密集型应用没有机会使用I/O设备</li>
+<li>进而导致I/O设备空闲，I/O资源利用率低</li>
+</ul></li>
+</ul>
+<h2 id="最短时间算法">最短时间算法</h2>
+<h3 id="最短时间优先stcf算法">最短时间优先（STCF）算法</h3>
+<blockquote>
+<p>适用于非抢占式调度</p>
+</blockquote>
+<p>所有作业同时到达，根据所需时间从小到大依次执行。</p>
+<h3 id="最短剩余时间优先srtcf算法">最短剩余时间优先（SRTCF）算法</h3>
+<blockquote>
+<p>适用于抢占式调度</p>
+</blockquote>
+<p>选择就绪队列中剩余时间最短进程占用CPU并进入运行状态</p>
+<h3 id="优点平均响应时间短">优点：平均响应时间短</h3>
+<h3 id="缺点-1">缺点</h3>
+<ul>
+<li>可能会造成饥饿</li>
+<li>由于连续的短进程运行导致长进程始终无法获得CPU资源</li>
+</ul>
+<h2 id="时间片轮转rr算法">时间片轮转（RR）算法</h2>
+<blockquote>
+<p>适用于抢占式调度，多用于交互式系统</p>
+</blockquote>
+<p>在时间片结束的时候，调度器按<code>FCFS</code>算法切换到下一个就绪的进程</p>
+<h3 id="时间片长度的选择">时间片长度的选择</h3>
+<ul>
+<li>大时间片
+<ul>
+<li>等待时间过长</li>
+<li>极端情况下退化为<code>FSFS</code></li>
+</ul></li>
+<li>小时间片
+<ul>
+<li>响应时间块</li>
+<li>产生大量上下文切换，影响系统吞吐</li>
+</ul></li>
+<li>经验规则
+<ul>
+<li>选择一个合适的时间片，使上下文切换开销处于1%以内</li>
+</ul></li>
+</ul>
+<h3 id="虚拟轮转vrr算法">虚拟轮转（VRR）算法</h3>
+<ul>
+<li>引入辅助队列（<code>FIFO</code>算法）</li>
+<li>I/O密集型进程进入辅助队列<strong>（而不是就绪队列）</strong>以备调度</li>
+<li>辅助队列比就绪队列有着更高的优先级</li>
+</ul>
+<h2 id="多级队列mlq与优先级调度">多级队列（MLQ）与优先级调度</h2>
+<blockquote>
+<p>将就绪队列分为多个独立的子队列，每个队列可有自己的调度算法</p>
+</blockquote>
+<p>例如：将前台任务（交互式）采用<code>RR</code>算法，后台任务（批处理）采用<code>FCFS</code>算法</p>
+<h3 id="队列之间">队列之间</h3>
+<ul>
+<li>最高优先级优先
+<ul>
+<li>固定优先级</li>
+<li>先调度高优先级，在调度低优先级</li>
+<li>可能导致饥饿</li>
+</ul></li>
+<li>潜在问题：<strong>优先级反转</strong>
+<ul>
+<li>高优先级进程所需资源被低优先级进程占有，需要等待低优先级进程的执行</li>
+<li>中优先级进程优先执行，呈现为优先级高于高优先级进程</li>
+</ul></li>
+<li>解决办法：<strong>优先级继承</strong>
+<ul>
+<li>高优先级进程由于等待资源被阻塞时，自动提升低优先级进程的优先级</li>
+</ul></li>
+</ul>
+<h3 id="多级反馈队列mlfq算法">多级反馈队列（MLFQ）算法</h3>
+<blockquote>
+<p>进程可在不同队列间移动的多级队列算法，实现优先级动态调整</p>
+</blockquote>
+<h4 id="特征">特征：</h4>
+<ul>
+<li>每一级队列分配一个时间片，时间片的大小随着优先级别的增加而减小</li>
+<li>进程在当前的时间片没有完成，则降到下一个优先级</li>
+<li>CPU密集型进程的优先级下降很快，而I/O密集型进程则停留在高优先级</li>
+<li>在一定时间周期后，将所有进程的优先级都提升到最高的等级</li>
+</ul>
+<h2 id="公平共享调度fss">公平共享调度（FSS）</h2>
+<blockquote>
+<p>FSS基于份额控制用户对系统资源的访问</p>
+</blockquote>
+<h3 id="份额管理">份额管理</h3>
+<ul>
+<li>按一定的比例在不同用户间分配份额</li>
+<li>需要为突发任务预留份额</li>
+<li>可以为用户设置份额上限</li>
+</ul>
+<h3 id="优先级和份额的区别">优先级和份额的区别</h3>
+<ul>
+<li>优先级表明任务执行的先后，可以优化周转时间、响应时间，但无法确保任务能获得应得的资源比例</li>
+<li>份额对应任务使用的资源比例</li>
+</ul>
+<h2 id="彩票调度">彩票调度</h2>
+<h3 id="彩票方法">彩票方法</h3>
+<ul>
+<li>给每个作业一定数量的彩票（份额）</li>
+<li>随机抽取一张中奖彩票，中奖的作业将获得CPU</li>
+<li>有较多彩票的作业能获得的调度机会更多，随着调度次数增加，每个作业的彩票数量占比趋近于调度次数占比</li>
+<li>为了近似SRTCF，给短作业更多的彩票</li>
+<li>为了避免饥饿，给每个作业至少一个彩票</li>
+</ul>
+<h2 id="调度算法总结">调度算法总结</h2>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 8%" />
+<col style="width: 14%" />
+<col style="width: 27%" />
+<col style="width: 26%" />
+<col style="width: 22%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">算法</th>
+<th style="text-align: center;">适用系统</th>
+<th style="text-align: center;">平均响应时间</th>
+<th style="text-align: center;">公平性</th>
+<th style="text-align: center;">潜在问题</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">FCFS</td>
+<td style="text-align: center;">批处理</td>
+<td style="text-align: center;">长</td>
+<td style="text-align: center;">可能造成饥饿</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">STCF</td>
+<td style="text-align: center;">批处理</td>
+<td style="text-align: center;">短</td>
+<td style="text-align: center;">长进程可能饥饿</td>
+<td style="text-align: center;">需要预测作业执行时间</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">SRTCF</td>
+<td style="text-align: center;">批处理</td>
+<td style="text-align: center;">短</td>
+<td style="text-align: center;">长进程可能饥饿</td>
+<td style="text-align: center;">需要预测作业执行时间</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">RR</td>
+<td style="text-align: center;">交互式</td>
+<td style="text-align: center;">短，I/O进程响应时间较长</td>
+<td style="text-align: center;">公平对待</td>
+<td style="text-align: center;">时间片小会导致吞吐率低</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">VRR</td>
+<td style="text-align: center;">交互式</td>
+<td style="text-align: center;">短</td>
+<td style="text-align: center;">对I/O密集型进程友好</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">MLQ</td>
+<td style="text-align: center;">交互式和批处理</td>
+<td style="text-align: center;">低优先级队列任务 响应时间长</td>
+<td style="text-align: center;">可能造成饥饿</td>
+<td style="text-align: center;">优先级反转</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">MLFQ</td>
+<td style="text-align: center;">交互式和批处理</td>
+<td style="text-align: center;">短</td>
+<td style="text-align: center;">兼顾长短作业</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">彩票算法</td>
+<td style="text-align: center;">交互式和批处理</td>
+<td style="text-align: center;">短</td>
+<td style="text-align: center;">兼顾长短作业，考虑资源比例</td>
+<td style="text-align: center;"></td>
+</tr>
+</tbody>
+</table>
+<h2 id="实时调度">实时调度</h2>
+<h3 id="两种类型的实时">两种类型的实时</h3>
+<ul>
+<li><strong>硬实时</strong>：必须满足，否则会产生错误</li>
+<li><strong>软实时</strong>：大多时候需满足，没有强制性</li>
+</ul>
+<h3 id="准入控制">准入控制</h3>
+<blockquote>
+<p>只有当系统能够保证所有进程的实时性的前提下，新的实时进程才能被准入</p>
+</blockquote>
+<p>如果满足以下条件，则作业就是可调度的 <span class="math display">\[
+\sum\frac{C_i}{T_i}\leq1
+\]</span> 其中<span class="math inline">\(C_i\)</span>为计算时间，<span
+class="math inline">\(T_i\)</span>为周期</p>
+<h3 id="速率单调调度">速率单调调度</h3>
+<h4 id="假设-1">假设</h4>
+<ul>
+<li>每个周期性进程必须在其周期内完成</li>
+<li>进程之间没有依赖关系</li>
+<li>每个进程在每个周期内需要的CPU时间相同</li>
+<li>非周期性进程没有截止时间</li>
+<li>进程抢占瞬时发生（没有开销）</li>
+</ul>
+<h4 id="基本思想">基本思想</h4>
+<ul>
+<li>给每个进程分配一个固定的优先级（出现频率）
+<ul>
+<li>例如每50ms运行一次，则优先级是20</li>
+</ul></li>
+<li>运行最高优先级的进程</li>
+<li>已经被证明是最优的静态优先级实时调度策略</li>
+</ul>
+<h3 id="最早截止时间优先调度edf">最早截止时间优先调度（EDF）</h3>
+<h4 id="假设-2">假设</h4>
+<ul>
+<li>当进程运行时，它会提供其需要完成运行的截止时间</li>
+<li>不一定是一个周期性的进程</li>
+</ul>
+<h4 id="基本思想-1">基本思想</h4>
+<ul>
+<li>根据截止时间对就绪的进程进行排序</li>
+<li>运行列表中的第一个进程（最早截止时间优先）
+<ul>
+<li>例如P1在30s之前结束，P2在40s之前结束，则P1先运行</li>
+</ul></li>
+<li>当新的进程就绪的时候，并且其截止时间快来临时，它会抢占当前进程</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div class="post-widgets">
+      <div id="needsharebutton-postbottom">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    </div>
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>JamesYu
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="https://blog.jamesyuuu.me/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/CPU%E8%B0%83%E5%BA%A6/" title="CPU调度">https://blog.jamesyuuu.me/操作系统/CPU调度/</a>
+  </li>
+  <li class="post-copyright-license">
+      <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzQuMC9kZWVkLnpo"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</span> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E7%AC%94%E8%AE%B0/" rel="tag"><i class="fa fa-tag"></i> 笔记</a>
+              <a href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag"><i class="fa fa-tag"></i> 操作系统</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E7%BA%BF%E7%A8%8B/" rel="prev" title="线程">
+                  <i class="fa fa-angle-left"></i> 线程
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E4%B8%B4%E7%95%8C%E5%8C%BA%E4%B8%8E%E5%8E%9F%E5%AD%90%E6%93%8D%E4%BD%9C/" rel="next" title="临界区与原子操作">
+                  临界区与原子操作 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments" id="lv-container" data-id="city" data-uid="MTAyMC81NTk2Mi8zMjQyNQ"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 2022 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">JamesYu</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">64k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">3:52</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <span class="exturl" data-url="aHR0cHM6Ly9oZXhvLmlv">Hexo</span> & <span class="exturl" data-url="aHR0cHM6Ly90aGVtZS1uZXh0LmpzLm9yZw==">NexT.Gemini</span> 强力驱动
+  </div>
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/gh/stevenjoezhang/live2d-widget@latest/autoload.js"></script>
+  </footer>
+
+  
+  <script size="300" alpha="0.6" zIndex="-1" src="https://cdn.jsdelivr.net/npm/ribbon.js@1.0.2/dist/ribbon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script><script src="/js/bookmark.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.2.12/pdfobject.min.js","integrity":"sha256-g2xji1rlE3KsGVClvuxTbcR0Kn2+wtQADSff2Tbb4zA="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@10.5.0/dist/mermaid.min.js","integrity":"sha256-K7oJiQlDulzl24ZUFOywuYme1JqBBvQzK6m8qHjt9Gk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+
+
+  <script src="/js/third-party/pace.js"></script>
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/darkmode-js@1.5.7/lib/darkmode-js.min.js"></script>
+
+<script>
+var options = {
+  bottom: '64px',
+  right: '32px',
+  left: 'unset',
+  time: '0.5s',
+  mixColor: 'transparent',
+  backgroundColor: 'transparent',
+  buttonColorDark: '#100f2c',
+  buttonColorLight: '#fff',
+  saveInCookies: true,
+  label: '🌓',
+  autoMatchOsTheme: true
+}
+const darkmode = new Darkmode(options);
+window.darkmode = darkmode;
+darkmode.showWidget();
+</script>
+
+  <script src="//cdn.jsdelivr.net/gh/theme-next/theme-next-needmoreshare2@1/needsharebutton.min.js"></script>
+  <script>
+      pbOptions = {};
+        pbOptions.iconStyle = "box";
+        pbOptions.boxForm = "horizontal";
+        pbOptions.position = "bottomCenter";
+        pbOptions.networks = "Weibo,Wechat,Douban,QQZone,Twitter,Facebook";
+      new needShareButton('#needsharebutton-postbottom', pbOptions);
+  </script><script src="/js/third-party/comments/livere.js"></script>
+
+</body>
+</html>

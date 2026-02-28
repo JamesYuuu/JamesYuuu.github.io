@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="baidu-site-verification" content="PTwOehQpzZ">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.2/css/all.min.css" integrity="sha256-CTSx/A06dm1B063156EVh15m6Y67pAjZZaQc89LLSrU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/themes/blue/pace-theme-minimal.css">
+  <script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous"></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"blog.jamesyuuu.me","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.2","exturl":true,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":true,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="缺页与换页 进程加载  简单方法  将整个进程加载进内存 -&gt; 运行它 -&gt; 退出  问题  慢（特别是对于大的进程） 浪费空间（一个进程并不是每时每刻都需要所有的内存）  解决办法  按需加载页：只将实际使用的页加载进内存 换页：内存空间有限，只放频繁使用的那些页  机制  一部分虚存映射到内存，另一部分虚存映射到磁盘   缺页处理  内存访问（先查TLB） 若TLB不命中，则进行页">
+<meta property="og:type" content="article">
+<meta property="og:title" content="按需加载与页替换">
+<meta property="og:url" content="https://blog.jamesyuuu.me/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E6%8C%89%E9%9C%80%E5%8A%A0%E8%BD%BD%E4%B8%8E%E9%A1%B5%E6%9B%BF%E6%8D%A2/index.html">
+<meta property="og:site_name" content="JamesYu&#39;s Hut">
+<meta property="og:description" content="缺页与换页 进程加载  简单方法  将整个进程加载进内存 -&gt; 运行它 -&gt; 退出  问题  慢（特别是对于大的进程） 浪费空间（一个进程并不是每时每刻都需要所有的内存）  解决办法  按需加载页：只将实际使用的页加载进内存 换页：内存空间有限，只放频繁使用的那些页  机制  一部分虚存映射到内存，另一部分虚存映射到磁盘   缺页处理  内存访问（先查TLB） 若TLB不命中，则进行页">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-12-24T15:23:00.000Z">
+<meta property="article:modified_time" content="2026-02-28T13:01:35.714Z">
+<meta property="article:author" content="JamesYu">
+<meta property="article:tag" content="笔记">
+<meta property="article:tag" content="操作系统">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://blog.jamesyuuu.me/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E6%8C%89%E9%9C%80%E5%8A%A0%E8%BD%BD%E4%B8%8E%E9%A1%B5%E6%9B%BF%E6%8D%A2/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://blog.jamesyuuu.me/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E6%8C%89%E9%9C%80%E5%8A%A0%E8%BD%BD%E4%B8%8E%E9%A1%B5%E6%9B%BF%E6%8D%A2/","path":"操作系统/按需加载与页替换/","title":"按需加载与页替换"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>按需加载与页替换 | JamesYu's Hut</title>
+  
+
+
+
+
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/gh/theme-next/theme-next-needmoreshare2@1/needsharebutton.min.css"><style>
+#needsharebutton-postbottom {
+  cursor: pointer;
+  height: 26px;
+  margin-top: 10px;
+  position: relative;
+}
+#needsharebutton-postbottom .btn {
+  border: 1px solid $btn-default-border-color;
+  border-radius: 3px;
+  display: initial;
+  padding: 1px 4px;
+}
+</style>
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css">
+<style>.darkmode--activated{--body-bg-color:#282828;--content-bg-color:#333;--card-bg-color:#555;--text-color:#ccc;--blockquote-color:#bbb;--link-color:#ccc;--link-hover-color:#eee;--brand-color:#ddd;--brand-hover-color:#ddd;--table-row-odd-bg-color:#282828;--table-row-hover-bg-color:#363636;--menu-item-bg-color:#555;--btn-default-bg:#222;--btn-default-color:#ccc;--btn-default-border-color:#555;--btn-default-hover-bg:#666;--btn-default-hover-color:#ccc;--btn-default-hover-border-color:#666;--highlight-background:#282b2e;--highlight-foreground:#a9b7c6;--highlight-gutter-background:#34393d;--highlight-gutter-foreground:#9ca9b6}.darkmode--activated img{opacity:.75}.darkmode--activated img:hover{opacity:.9}.darkmode--activated code{color:#69dbdc;background:0 0}button.darkmode-toggle{z-index:9999}.darkmode-ignore,img{display:flex!important}.beian img{display:inline-block!important}</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">JamesYu's Hut</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Game | Bangumi</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">7</span></a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">3</span></a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">36</span></a></li><li class="menu-item menu-item-观影"><a href="/movies/index.html" rel="section"><i class="fa fa-film fa-fw"></i>观影</a></li><li class="menu-item menu-item-追番"><a href="/bangumis/index.html" rel="section"><i class="fa fa-video-camera fa-fw"></i>追番</a></li><li class="menu-item menu-item-追剧"><a href="/cinemas/index.html" rel="section"><i class="fa fa-television fa-fw"></i>追剧</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%BC%BA%E9%A1%B5%E4%B8%8E%E6%8D%A2%E9%A1%B5"><span class="nav-number">1.</span> <span class="nav-text">缺页与换页</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%9B%E7%A8%8B%E5%8A%A0%E8%BD%BD"><span class="nav-number">1.1.</span> <span class="nav-text">进程加载</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BC%BA%E9%A1%B5%E5%A4%84%E7%90%86"><span class="nav-number">1.2.</span> <span class="nav-text">缺页处理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%A1%B5%E6%9B%BF%E6%8D%A2"><span class="nav-number">1.3.</span> <span class="nav-text">页替换</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8C%85%E5%90%AB%E9%A1%B5%E6%9B%BF%E6%8D%A2%E7%9A%84%E7%BC%BA%E9%A1%B5%E5%A4%84%E7%90%86%E7%AE%97%E6%B3%95"><span class="nav-number">1.4.</span> <span class="nav-text">包含页替换的缺页处理算法</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%A1%B5%E6%9B%BF%E6%8D%A2%E7%AE%97%E6%B3%95"><span class="nav-number">2.</span> <span class="nav-text">页替换算法</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%80%E4%BC%98%E7%AE%97%E6%B3%95min"><span class="nav-number">2.1.</span> <span class="nav-text">最优算法（MIN）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fifo"><span class="nav-number">2.2.</span> <span class="nav-text">FIFO</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fifo-with-second-chance"><span class="nav-number">2.3.</span> <span class="nav-text">FIFO with Second Chance</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#clock"><span class="nav-number">2.4.</span> <span class="nav-text">Clock</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#lru"><span class="nav-number">2.5.</span> <span class="nav-text">LRU</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#nrunot-recently-used"><span class="nav-number">2.6.</span> <span class="nav-text">NRU（Not Recently Used）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#lfuleast-frequently-used"><span class="nav-number">2.7.</span> <span class="nav-text">LFU（Least Frequently Used）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#aging"><span class="nav-number">2.8.</span> <span class="nav-text">Aging</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#working-set"><span class="nav-number">2.9.</span> <span class="nav-text">Working Set</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#wsclock"><span class="nav-number">2.10.</span> <span class="nav-text">WSClock</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">2.11.</span> <span class="nav-text">总结</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="JamesYu"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">JamesYu</p>
+  <div class="site-description" itemprop="description">A Game and Bangumi Database For Private Use</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">36</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL0phbWVzWXV1dQ==" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;JamesYuuu"><i class="fab fa-github fa-fw"></i>GitHub</span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9pbnN0YWdyYW0uY29tL2phbWVzeXUzMg==" title="Instagram → https:&#x2F;&#x2F;instagram.com&#x2F;jamesyu32"><i class="fab fa-instagram fa-fw"></i>Instagram</span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9zcGFjZS5iaWxpYmlsaS5jb20vMTgyODA5NTQ5" title="Bilibili → https:&#x2F;&#x2F;space.bilibili.com&#x2F;182809549"><i class="fab fa-bilibili fa-fw"></i>Bilibili</span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cuemhpaHUuY29tL3Blb3BsZS95aWdlLWRhLXNodWFpLWJpLTQw" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;yige-da-shuai-bi-40"><i class="fab fa-zhihu fa-fw"></i>Zhihu</span>
+      </span>
+  </div>
+  <div class="cc-license animated" itemprop="license">
+    <span class="exturl cc-opacity" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzQuMC9kZWVkLnpo"><img src="https://cdn.jsdelivr.net/npm/@creativecommons/vocabulary@2020.11.3/assets/license_badges/small/by_nc_sa.svg" alt="Creative Commons"></span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+  <span class="exturl github-corner" data-url="aHR0cHM6Ly9naXRodWIuY29tL0phbWVzWXV1dQ==" title="在 GitHub 上关注我" aria-label="在 GitHub 上关注我"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></span>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://blog.jamesyuuu.me/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E6%8C%89%E9%9C%80%E5%8A%A0%E8%BD%BD%E4%B8%8E%E9%A1%B5%E6%9B%BF%E6%8D%A2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="JamesYu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="JamesYu's Hut">
+      <meta itemprop="description" content="A Game and Bangumi Database For Private Use">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="按需加载与页替换 | JamesYu's Hut">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          按需加载与页替换<span class="exturl post-edit-link" data-url="aHR0cHM6Ly9naXRodWIuY29tL0phbWVzWXV1dS9IZXhvLUJsb2cvdHJlZS9tYWluL3NvdXJjZS9fcG9zdHMv5pON5L2c57O757ufL+aMiemcgOWKoOi9veS4jumhteabv+aNoi5tZA==" title="编辑"><i class="fa fa-pen-nib"></i></span>
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2022-12-24 23:23:00" itemprop="dateCreated datePublished" datetime="2022-12-24T23:23:00+08:00">2022-12-24</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-02-28 21:01:35" itemprop="dateModified" datetime="2026-02-28T21:01:35+08:00">2026-02-28</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Study/" itemprop="url" rel="index"><span itemprop="name">Study</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>2.3k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>9 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="缺页与换页">缺页与换页</h1>
+<h2 id="进程加载">进程加载</h2>
+<ol type="1">
+<li>简单方法
+<ul>
+<li>将整个进程加载进内存 -&gt; 运行它 -&gt; 退出</li>
+</ul></li>
+<li>问题
+<ul>
+<li>慢（特别是对于大的进程）</li>
+<li>浪费空间（一个进程并不是每时每刻都需要所有的内存）</li>
+</ul></li>
+<li>解决办法
+<ul>
+<li>按需加载页：只将实际使用的页加载进内存</li>
+<li>换页：内存空间有限，只放频繁使用的那些页</li>
+</ul></li>
+<li>机制
+<ul>
+<li>一部分虚存映射到内存，另一部分虚存映射到磁盘</li>
+</ul></li>
+</ol>
+<h2 id="缺页处理">缺页处理</h2>
+<ol type="1">
+<li>内存访问（先查TLB）</li>
+<li>若TLB不命中，则进行页表查找，找到PTE</li>
+<li>若PTE的valid位=0（页不在内存），则触发缺页（Page Fault）</li>
+<li>虚存管理中的缺页处理接管控制，将页从磁盘读到内存</li>
+<li>更新PTE：填入PP#，将Valid位置1</li>
+<li>重新执行该指令：重新进行内存访问</li>
+</ol>
+<blockquote>
+<p>发生缺页后，如何切换到缺页处理？</p>
+</blockquote>
+<ul>
+<li>缺页可能发生在一条指令执行的中途</li>
+<li>应用程序透明：必须让用户程序不感知缺页</li>
+<li>需要保存状态并从断点处继续执行</li>
+</ul>
+<h2 id="页替换">页替换</h2>
+<ol type="1">
+<li>需要的页不再内存里 -&gt; 需换入 -&gt; 需为它分配一个页框</li>
+<li>可能此时没有空闲页框 -&gt; VM需要进行页替换</li>
+</ol>
+<h2 id="包含页替换的缺页处理算法">包含页替换的缺页处理算法</h2>
+<ol type="1">
+<li>进程A发生缺页，发生缺页的页记为VP
+<ul>
+<li>陷入内核，保存进程A的当前状态: PC和寄存器</li>
+<li>调用OS的缺页处理模块
+<ul>
+<li>检查地址和操作类型的合法性，若不合法则终止进程</li>
+<li>为VP分配一个物理页框，记为PP
+<ul>
+<li>如果有空闲页框PP1，则用它，记PP=PP1</li>
+<li>如果没有空闲页框，选择一个状态为used页框PP2
+<ul>
+<li>如果他是脏的(M位=1)，则把它写回磁盘</li>
+<li>PTE表项的valid置0，刷新TLB</li>
+<li>写回完成后，PP=PP2</li>
+</ul></li>
+</ul></li>
+<li>找到VP对应的磁盘页，把它读到这个页框(PP)中</li>
+<li>修改VP的PTE：填入PP#，将valid位置1，并把该PTE加载进TLB</li>
+</ul></li>
+<li>恢复进程A的状态，重新执行发生缺页的指令</li>
+</ul></li>
+<li>通用数据结构
+<ul>
+<li>空闲页框链表</li>
+<li>一张映射表：页框-&gt;PID和虚页</li>
+</ul></li>
+</ol>
+<h1 id="页替换算法">页替换算法</h1>
+<ol type="1">
+<li>随机选一页</li>
+<li>最优算法（MIN）</li>
+<li>NRU(Not Recently Used)</li>
+<li>FIFO(First-In-First-Out)</li>
+<li>FIFO with Second Chance</li>
+<li>NFU(Not Frequently Used)</li>
+<li>LRU(Least Recently Used)</li>
+<li>Aging(Approximate LRU)</li>
+<li>Clock</li>
+<li>Working Set</li>
+<li>WSClock</li>
+</ol>
+<h2 id="最优算法min">最优算法（MIN）</h2>
+<ol type="1">
+<li>算法
+<ul>
+<li>替换在未来最长一段时间里不用的页</li>
+<li>前提：知道未来所有的访问</li>
+</ul></li>
+<li>例子
+<ul>
+<li>内存大小为4个页</li>
+<li>访问序列：<strong>1,2,3,4</strong>,1,2,<strong>5</strong>,1,2,3,<strong>4</strong>,5</li>
+<li>一共发生6次缺页</li>
+</ul></li>
+<li>好处
+<ul>
+<li>是最优的方案，可以作为一种离线的分析手段</li>
+</ul></li>
+<li>坏处
+<ul>
+<li>在线系统无法采用，因为不知道未来访问的顺序</li>
+<li>没有线性时间复杂度的实现</li>
+</ul></li>
+</ol>
+<h2 id="fifo">FIFO</h2>
+<ol type="1">
+<li>算法
+<ul>
+<li>选择最老的页扔掉</li>
+</ul></li>
+<li>例子
+<ul>
+<li>内存大小为4个页</li>
+<li>访问序列：<strong>1,2,3,4</strong>,1,2,<strong>5,1,2,3,4,5</strong></li>
+<li>一共发生10次缺页</li>
+</ul></li>
+<li>好处
+<ul>
+<li>实现开销最小</li>
+</ul></li>
+<li>坏处
+<ul>
+<li>频繁使用的页被替换</li>
+</ul></li>
+</ol>
+<blockquote>
+<p>能否通过增加页的数量来减少缺页？</p>
+</blockquote>
+<ol type="1">
+<li>假设内存大小为3个页，访问序列：<strong>1,2,3,4,1,2,5</strong>,1,2,<strong>3,4</strong>,5，只发生9次缺页</li>
+<li>"Belady's
+Anomaly"现象：采用FIFO算法时，有时会出现分配页数增多，缺页次数反而升高的异常现象</li>
+</ol>
+<h2 id="fifo-with-second-chance">FIFO with Second Chance</h2>
+<ol type="1">
+<li>核心思想
+<ul>
+<li>尽量让频繁使用的页留在内存，不被替换</li>
+<li>替换时给访问过的页第二次机会，在内存中呆更长的时间</li>
+</ul></li>
+<li>算法
+<ul>
+<li>检查最老页的R位，如果为0，则将其替换</li>
+<li>如果为1，则将R位清0，将该页移到队尾，继续查找</li>
+</ul></li>
+<li>例子
+<ul>
+<li>内存大小为4个页</li>
+<li>访问序列：<strong>1,2,3,4</strong>,1,2,<strong>5</strong>,1,2,<strong>3,4,5</strong></li>
+<li>一共发生8次缺页</li>
+</ul></li>
+<li>好处
+<ul>
+<li>实现简单</li>
+</ul></li>
+<li>坏处
+<ul>
+<li>最坏情况可以需要很长时间</li>
+</ul></li>
+</ol>
+<h2 id="clock">Clock</h2>
+<ol type="1">
+<li>改进Second Chance的替换开销
+<ul>
+<li>移动开销</li>
+</ul></li>
+<li>算法：把所有页框组织成环形链表
+<ul>
+<li>用一个表针指向最老的页</li>
+<li>发生缺页的时候，按表针走动方向来检查页</li>
+<li>第二次机会
+<ul>
+<li>如果R位为1，则将R位清0，且表针向前移一格</li>
+<li>如果R位为0，则将该页替换，且表针向前移一格</li>
+</ul></li>
+</ul></li>
+<li>与Second Chance算法相比
+<ul>
+<li>更加高效</li>
+</ul></li>
+<li>如果内存很大
+<ul>
+<li>轮转一遍需要很长的时间</li>
+</ul></li>
+</ol>
+<h2 id="lru">LRU</h2>
+<ol type="1">
+<li>替换最长时间没有使用的页
+<ul>
+<li>将所有页框组织成一个链表</li>
+<li>前端为最久未访问页（LRU端）：替换的页</li>
+<li>后端为最近刚访问的页（MRU端）：新加载的页和命中的页</li>
+<li>每次命中将页重新插入 MRU 端</li>
+</ul></li>
+<li>例子
+<ul>
+<li>内存大小为4个页</li>
+<li>访问序列：<strong>1,2,3,4</strong>,1,2,<strong>5</strong>,1,2,<strong>3,4,5</strong></li>
+<li>一共发生8次缺页</li>
+</ul></li>
+<li>好处
+<ul>
+<li>对 MIN 算法的很好近似</li>
+</ul></li>
+<li>坏处
+<ul>
+<li>实现困难</li>
+</ul></li>
+</ol>
+<h2 id="nrunot-recently-used">NRU（Not Recently Used）</h2>
+<ol type="1">
+<li>算法
+<ul>
+<li>按下面顺序，随机选择一个页
+<ul>
+<li>未访问过 且 未修改过</li>
+<li>未访问过 且 修改过</li>
+<li>访问过 且 未修改过</li>
+<li>访问过 且 修改过</li>
+</ul></li>
+</ul></li>
+<li>例子
+<ul>
+<li>内存大小为4个页</li>
+<li>访问序列：<strong>1,2,3,4</strong>,1,2,<strong>5</strong>,1,2,<strong>3,4</strong>,5</li>
+<li>一共发生7次缺页</li>
+</ul></li>
+<li>好处
+<ul>
+<li>实现简单</li>
+</ul></li>
+<li>坏处
+<ul>
+<li>需要扫描内存中所有页的R位和M位</li>
+</ul></li>
+</ol>
+<h2 id="lfuleast-frequently-used">LFU（Least Frequently Used）</h2>
+<ol type="1">
+<li>算法：记录每个页的访问次数，替换访问次数最少的页
+<ul>
+<li>每页有一个访问计数器，用软件模拟</li>
+<li>每个时钟中断时，所有页的计数器分别和它的R位值相加</li>
+</ul></li>
+<li>例子
+<ul>
+<li>内存大小为4个页</li>
+<li>访问序列：<strong>1,2,3,4</strong>,1,2,<strong>5</strong>,1,2,<strong>3,4,5</strong></li>
+<li>一共发生8次缺页</li>
+</ul></li>
+<li>坏处
+<ul>
+<li>过去访问频繁、现在不访问的页，可能无法被替换出去</li>
+</ul></li>
+</ol>
+<h2 id="aging">Aging</h2>
+<ol type="1">
+<li>在LFU的基础上消除过去访问的影响
+<ul>
+<li>每个时钟中断时，先将所有页计数器右移1位，再将每页计数器最高位与该页的R位相加</li>
+<li>替换时，选择计数器最小的页</li>
+</ul></li>
+<li>Aging 和 LRU 的主要差别
+<ul>
+<li>记录下来的历史更短（计数器长度）</li>
+<li>无法区分访问的先后顺序（同一个tick内）</li>
+</ul></li>
+<li>Aging需要多少位才够用
+<ul>
+<li>实际工作中8位就工作的很好</li>
+</ul></li>
+</ol>
+<h2 id="working-set">Working Set</h2>
+<ol type="1">
+<li>主要思想
+<ul>
+<li>80/20原则
+<ul>
+<li>80%的访问只涉及20%的内存空间</li>
+<li>80%的访问都来自20%的代码</li>
+</ul></li>
+<li>空间局限性
+<ul>
+<li>相邻的页很可能会被访问</li>
+</ul></li>
+<li>时间局限性
+<ul>
+<li>被访问的页很可能在不远的将来再被访问</li>
+</ul></li>
+</ul></li>
+<li>工作集的概念
+<ul>
+<li>工作集被定义为在最近K次访问的那些页</li>
+<li>把工作集放在内存能大大地减少缺页</li>
+<li>工作集可以近似为过去T秒钟里使用的页</li>
+</ul></li>
+<li>算法：记录页的"上次访问时间"
+<ul>
+<li>在缺页处理时，扫描该进程所有的页</li>
+<li>如果R位为1，将该页的上次访问时间设置为当前时间</li>
+<li>如果R位为0，计算当前时间和上次访问时间之差
+<ul>
+<li>如果差值大于T，则该页在过去T秒里没有被访问过，则替换它</li>
+<li>否则，检查下一页</li>
+</ul></li>
+<li>将发生缺页的页加入工作集</li>
+</ul></li>
+</ol>
+<h2 id="wsclock">WSClock</h2>
+<ol type="1">
+<li>将 Working Set类似的组织成环形链表（类似 Clock）</li>
+<li>按表针走动的顺序来检查页</li>
+<li>如果R位为1
+<ul>
+<li>将R位置成0，该页的上次访问时间设置为当前时间</li>
+<li>检查下一页</li>
+</ul></li>
+<li>如果R位为0
+<ul>
+<li>设差值为 当前时间-上次访问时间</li>
+<li>如果该值小于等于T，则代表在过去T秒里被访问过，检查下一页</li>
+<li>如果该值大于T，则代表在过去T秒里没有被访问过
+<ul>
+<li>若M位为1，则将该页写回加入写回链表（异步进行写回），并检查下一页</li>
+<li>若M位为0，则将该页替换出去</li>
+</ul></li>
+</ul></li>
+</ol>
+<h2 id="总结">总结</h2>
+<ol type="1">
+<li>LRU很好但是实现困难，Aging是一个很好的近似LFU</li>
+<li>Clock被认为是一个很好的实际解决方案</li>
+<li>所有的替换算法都不会优化由Cold Miss带来的缺页</li>
+</ol>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">算法</th>
+<th style="text-align: center;">特点</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">MIN</td>
+<td style="text-align: center;">最优算法，但无法在实际系统中实现</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">FIFO</td>
+<td
+style="text-align: center;">没有考虑重复访问的情况，仅根据第一次访问时的顺序进行替换</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Second Chance</td>
+<td style="text-align: center;">在FIFO的基础上考虑了重复访问</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Clock</td>
+<td style="text-align: center;">基于Second
+Chance，可以更加高效的实现</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">LRU</td>
+<td
+style="text-align: center;">考虑了访问时效性，实现时有频繁链表操作，开销较大</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">NRU</td>
+<td
+style="text-align: center;">粗粒度近似LRU，只区分有无访问，同时优先保留脏页；与LRU比，时效性考虑较少</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">LFU</td>
+<td
+style="text-align: center;">考虑访问的次数，将访问次数多的数据留在内存中；容易受短期高频访问的影响</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Aging</td>
+<td
+style="text-align: center;">近似LFU，更容易实现；记录窗口短；相同访问次数时，无法区分时效性</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Working Set</td>
+<td style="text-align: center;">实现开销大</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">WSClock</td>
+<td
+style="text-align: center;">基于WS优化实现时的数据结构（环形链表），实现开销小</td>
+</tr>
+</tbody>
+</table>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div class="post-widgets">
+      <div id="needsharebutton-postbottom">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    </div>
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>JamesYu
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="https://blog.jamesyuuu.me/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E6%8C%89%E9%9C%80%E5%8A%A0%E8%BD%BD%E4%B8%8E%E9%A1%B5%E6%9B%BF%E6%8D%A2/" title="按需加载与页替换">https://blog.jamesyuuu.me/操作系统/按需加载与页替换/</a>
+  </li>
+  <li class="post-copyright-license">
+      <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzQuMC9kZWVkLnpo"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</span> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E7%AC%94%E8%AE%B0/" rel="tag"><i class="fa fa-tag"></i> 笔记</a>
+              <a href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag"><i class="fa fa-tag"></i> 操作系统</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E8%99%9A%E5%AD%98%E5%92%8C%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2/" rel="prev" title="虚存和地址转换">
+                  <i class="fa fa-angle-left"></i> 虚存和地址转换
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E8%99%9A%E5%AD%98%E8%AE%BE%E8%AE%A1%E5%85%B3%E9%94%AE%E9%97%AE%E9%A2%98/" rel="next" title="虚存设计关键问题">
+                  虚存设计关键问题 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments" id="lv-container" data-id="city" data-uid="MTAyMC81NTk2Mi8zMjQyNQ"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 2022 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">JamesYu</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">64k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">3:52</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <span class="exturl" data-url="aHR0cHM6Ly9oZXhvLmlv">Hexo</span> & <span class="exturl" data-url="aHR0cHM6Ly90aGVtZS1uZXh0LmpzLm9yZw==">NexT.Gemini</span> 强力驱动
+  </div>
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/gh/stevenjoezhang/live2d-widget@latest/autoload.js"></script>
+  </footer>
+
+  
+  <script size="300" alpha="0.6" zIndex="-1" src="https://cdn.jsdelivr.net/npm/ribbon.js@1.0.2/dist/ribbon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script><script src="/js/bookmark.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.2.12/pdfobject.min.js","integrity":"sha256-g2xji1rlE3KsGVClvuxTbcR0Kn2+wtQADSff2Tbb4zA="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@10.5.0/dist/mermaid.min.js","integrity":"sha256-K7oJiQlDulzl24ZUFOywuYme1JqBBvQzK6m8qHjt9Gk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+
+
+  <script src="/js/third-party/pace.js"></script>
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/darkmode-js@1.5.7/lib/darkmode-js.min.js"></script>
+
+<script>
+var options = {
+  bottom: '64px',
+  right: '32px',
+  left: 'unset',
+  time: '0.5s',
+  mixColor: 'transparent',
+  backgroundColor: 'transparent',
+  buttonColorDark: '#100f2c',
+  buttonColorLight: '#fff',
+  saveInCookies: true,
+  label: '🌓',
+  autoMatchOsTheme: true
+}
+const darkmode = new Darkmode(options);
+window.darkmode = darkmode;
+darkmode.showWidget();
+</script>
+
+  <script src="//cdn.jsdelivr.net/gh/theme-next/theme-next-needmoreshare2@1/needsharebutton.min.js"></script>
+  <script>
+      pbOptions = {};
+        pbOptions.iconStyle = "box";
+        pbOptions.boxForm = "horizontal";
+        pbOptions.position = "bottomCenter";
+        pbOptions.networks = "Weibo,Wechat,Douban,QQZone,Twitter,Facebook";
+      new needShareButton('#needsharebutton-postbottom', pbOptions);
+  </script><script src="/js/third-party/comments/livere.js"></script>
+
+</body>
+</html>

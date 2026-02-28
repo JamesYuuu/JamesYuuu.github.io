@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="baidu-site-verification" content="PTwOehQpzZ">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.2/css/all.min.css" integrity="sha256-CTSx/A06dm1B063156EVh15m6Y67pAjZZaQc89LLSrU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/themes/blue/pace-theme-minimal.css">
+  <script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous"></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"blog.jamesyuuu.me","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.2","exturl":true,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":true,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="进程间通信（IPC Inter-Process Communication）   共享资源互斥访问 条件同步 数据传输">
+<meta property="og:type" content="article">
+<meta property="og:title" content="进程间通信">
+<meta property="og:url" content="https://blog.jamesyuuu.me/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1/index.html">
+<meta property="og:site_name" content="JamesYu&#39;s Hut">
+<meta property="og:description" content="进程间通信（IPC Inter-Process Communication）   共享资源互斥访问 条件同步 数据传输">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/image-20221020151124712.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/image-20221020153743147.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/image-20221020153928170.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/image-20221020155342022.png">
+<meta property="article:published_time" content="2022-10-18T14:16:40.000Z">
+<meta property="article:modified_time" content="2026-02-28T13:01:35.714Z">
+<meta property="article:author" content="JamesYu">
+<meta property="article:tag" content="笔记">
+<meta property="article:tag" content="操作系统">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/image-20221020151124712.png">
+
+
+<link rel="canonical" href="https://blog.jamesyuuu.me/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://blog.jamesyuuu.me/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1/","path":"操作系统/进程间通信/","title":"进程间通信"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>进程间通信 | JamesYu's Hut</title>
+  
+
+
+
+
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/gh/theme-next/theme-next-needmoreshare2@1/needsharebutton.min.css"><style>
+#needsharebutton-postbottom {
+  cursor: pointer;
+  height: 26px;
+  margin-top: 10px;
+  position: relative;
+}
+#needsharebutton-postbottom .btn {
+  border: 1px solid $btn-default-border-color;
+  border-radius: 3px;
+  display: initial;
+  padding: 1px 4px;
+}
+</style>
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css">
+<style>.darkmode--activated{--body-bg-color:#282828;--content-bg-color:#333;--card-bg-color:#555;--text-color:#ccc;--blockquote-color:#bbb;--link-color:#ccc;--link-hover-color:#eee;--brand-color:#ddd;--brand-hover-color:#ddd;--table-row-odd-bg-color:#282828;--table-row-hover-bg-color:#363636;--menu-item-bg-color:#555;--btn-default-bg:#222;--btn-default-color:#ccc;--btn-default-border-color:#555;--btn-default-hover-bg:#666;--btn-default-hover-color:#ccc;--btn-default-hover-border-color:#666;--highlight-background:#282b2e;--highlight-foreground:#a9b7c6;--highlight-gutter-background:#34393d;--highlight-gutter-foreground:#9ca9b6}.darkmode--activated img{opacity:.75}.darkmode--activated img:hover{opacity:.9}.darkmode--activated code{color:#69dbdc;background:0 0}button.darkmode-toggle{z-index:9999}.darkmode-ignore,img{display:flex!important}.beian img{display:inline-block!important}</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">JamesYu's Hut</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Game | Bangumi</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">7</span></a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">3</span></a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">36</span></a></li><li class="menu-item menu-item-观影"><a href="/movies/index.html" rel="section"><i class="fa fa-film fa-fw"></i>观影</a></li><li class="menu-item menu-item-追番"><a href="/bangumis/index.html" rel="section"><i class="fa fa-video-camera fa-fw"></i>追番</a></li><li class="menu-item menu-item-追剧"><a href="/cinemas/index.html" rel="section"><i class="fa fa-television fa-fw"></i>追剧</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BF%A1%E5%8F%B7"><span class="nav-number">1.</span> <span class="nav-text">信号</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BF%A1%E5%8F%B7%E7%9A%84%E4%BA%A7%E7%94%9F"><span class="nav-number">1.1.</span> <span class="nav-text">信号的产生</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A1%AC%E4%BB%B6%E6%96%B9%E5%BC%8F"><span class="nav-number">1.1.1.</span> <span class="nav-text">硬件方式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BD%AF%E4%BB%B6%E6%96%B9%E5%BC%8F"><span class="nav-number">1.1.2.</span> <span class="nav-text">软件方式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BF%A1%E5%8F%B7%E7%9A%84%E6%8E%A5%E6%94%B6%E5%A4%84%E7%90%86"><span class="nav-number">1.2.</span> <span class="nav-text">信号的接收处理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BF%A1%E5%8F%B7%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="nav-number">1.3.</span> <span class="nav-text">信号的实现</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%AE%A1%E9%81%93"><span class="nav-number">2.</span> <span class="nav-text">管道</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AE%A1%E9%81%93%E7%9A%84%E5%88%86%E7%B1%BB"><span class="nav-number">2.1.</span> <span class="nav-text">管道的分类</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%97%A0%E5%90%8D%E7%AE%A1%E9%81%93"><span class="nav-number">2.1.1.</span> <span class="nav-text">无名管道</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%91%BD%E5%90%8D%E7%AE%A1%E9%81%93"><span class="nav-number">2.1.2.</span> <span class="nav-text">命名管道</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%8E%E7%AE%A1%E9%81%93%E6%9C%89%E5%85%B3%E7%9A%84%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8"><span class="nav-number">2.2.</span> <span class="nav-text">与管道有关的系统调用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AE%A1%E9%81%93%E7%A4%BA%E4%BE%8B"><span class="nav-number">2.2.1.</span> <span class="nav-text">管道示例</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97"><span class="nav-number">3.</span> <span class="nav-text">消息队列</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E7%9A%84%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8"><span class="nav-number">3.0.1.</span> <span class="nav-text">消息队列的系统调用</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%85%B1%E4%BA%AB%E5%86%85%E5%AD%98"><span class="nav-number">4.</span> <span class="nav-text">共享内存</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B1%E4%BA%AB%E5%86%85%E5%AD%98%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8"><span class="nav-number">4.1.</span> <span class="nav-text">共享内存系统调用</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%A5%97%E5%B5%8C%E5%AD%97socket-api"><span class="nav-number">5.</span> <span class="nav-text">套嵌字（Socket API）</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ipc%E6%96%B9%E5%BC%8F%E5%AF%B9%E6%AF%94"><span class="nav-number">6.</span> <span class="nav-text">IPC方式对比</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ipc%E8%AE%BE%E8%AE%A1%E8%80%83%E8%99%91"><span class="nav-number">7.</span> <span class="nav-text">IPC设计考虑</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%BE%E8%AE%A1%E8%80%83%E8%99%91"><span class="nav-number">7.1.</span> <span class="nav-text">设计考虑</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1%E7%9A%84%E5%9F%BA%E6%9C%AC%E5%8E%9F%E8%AF%AD"><span class="nav-number">7.1.1.</span> <span class="nav-text">进程间通信的基本原语</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%9B%E7%A8%8B%E9%80%9A%E4%BF%A1%E6%B5%81%E7%A8%8B"><span class="nav-number">7.1.2.</span> <span class="nav-text">进程通信流程</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BC%93%E5%86%B2%E6%B6%88%E6%81%AF"><span class="nav-number">7.2.</span> <span class="nav-text">缓冲消息</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%97%A0%E7%BC%93%E5%86%B2"><span class="nav-number">7.2.1.</span> <span class="nav-text">无缓冲</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%89%E7%95%8C%E7%BC%93%E5%86%B2"><span class="nav-number">7.2.2.</span> <span class="nav-text">有界缓冲</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%97%A0%E7%95%8C%E7%BC%93%E5%86%B2"><span class="nav-number">7.2.3.</span> <span class="nav-text">无界缓冲</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9B%B4%E6%8E%A5%E9%80%9A%E4%BF%A1-vs-%E9%97%B4%E6%8E%A5%E9%80%9A%E4%BF%A1"><span class="nav-number">7.3.</span> <span class="nav-text">直接通信 VS 间接通信</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%B4%E6%8E%A5%E9%80%9A%E4%BF%A1"><span class="nav-number">7.3.1.</span> <span class="nav-text">直接通信</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%97%B4%E6%8E%A5%E9%80%9A%E4%BF%A1"><span class="nav-number">7.3.2.</span> <span class="nav-text">间接通信</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%8C%E6%AD%A5%E5%92%8C%E5%BC%82%E6%AD%A5"><span class="nav-number">7.4.</span> <span class="nav-text">同步和异步</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%91%E9%80%81"><span class="nav-number">7.4.1.</span> <span class="nav-text">发送</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8E%A5%E6%94%B6"><span class="nav-number">7.4.2.</span> <span class="nav-text">接收</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BE%8B%E5%A4%96%E5%A4%84%E7%90%86"><span class="nav-number">8.</span> <span class="nav-text">例外处理</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%9B%E7%A8%8B%E7%BB%93%E6%9D%9F"><span class="nav-number">8.1.</span> <span class="nav-text">进程结束</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B6%88%E6%81%AF%E4%B8%A2%E5%A4%B1"><span class="nav-number">8.2.</span> <span class="nav-text">消息丢失</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B6%88%E6%81%AF%E6%8D%9F%E5%9D%8F"><span class="nav-number">8.3.</span> <span class="nav-text">消息损坏</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A3%80%E6%B5%8B%E6%96%B9%E6%B3%95"><span class="nav-number">8.3.1.</span> <span class="nav-text">检测方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BA%A0%E6%AD%A3%E6%96%B9%E6%B3%95"><span class="nav-number">8.3.2.</span> <span class="nav-text">纠正方法</span></a></li></ol></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="JamesYu"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">JamesYu</p>
+  <div class="site-description" itemprop="description">A Game and Bangumi Database For Private Use</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">36</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL0phbWVzWXV1dQ==" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;JamesYuuu"><i class="fab fa-github fa-fw"></i>GitHub</span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9pbnN0YWdyYW0uY29tL2phbWVzeXUzMg==" title="Instagram → https:&#x2F;&#x2F;instagram.com&#x2F;jamesyu32"><i class="fab fa-instagram fa-fw"></i>Instagram</span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9zcGFjZS5iaWxpYmlsaS5jb20vMTgyODA5NTQ5" title="Bilibili → https:&#x2F;&#x2F;space.bilibili.com&#x2F;182809549"><i class="fab fa-bilibili fa-fw"></i>Bilibili</span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cuemhpaHUuY29tL3Blb3BsZS95aWdlLWRhLXNodWFpLWJpLTQw" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;yige-da-shuai-bi-40"><i class="fab fa-zhihu fa-fw"></i>Zhihu</span>
+      </span>
+  </div>
+  <div class="cc-license animated" itemprop="license">
+    <span class="exturl cc-opacity" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzQuMC9kZWVkLnpo"><img src="https://cdn.jsdelivr.net/npm/@creativecommons/vocabulary@2020.11.3/assets/license_badges/small/by_nc_sa.svg" alt="Creative Commons"></span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+  <span class="exturl github-corner" data-url="aHR0cHM6Ly9naXRodWIuY29tL0phbWVzWXV1dQ==" title="在 GitHub 上关注我" aria-label="在 GitHub 上关注我"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></span>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://blog.jamesyuuu.me/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="JamesYu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="JamesYu's Hut">
+      <meta itemprop="description" content="A Game and Bangumi Database For Private Use">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="进程间通信 | JamesYu's Hut">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          进程间通信<span class="exturl post-edit-link" data-url="aHR0cHM6Ly9naXRodWIuY29tL0phbWVzWXV1dS9IZXhvLUJsb2cvdHJlZS9tYWluL3NvdXJjZS9fcG9zdHMv5pON5L2c57O757ufL+i/m+eoi+mXtOmAmuS/oS5tZA==" title="编辑"><i class="fa fa-pen-nib"></i></span>
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2022-10-18 22:16:40" itemprop="dateCreated datePublished" datetime="2022-10-18T22:16:40+08:00">2022-10-18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-02-28 21:01:35" itemprop="dateModified" datetime="2026-02-28T21:01:35+08:00">2026-02-28</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Study/" itemprop="url" rel="index"><span itemprop="name">Study</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>1.8k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>7 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><blockquote>
+<p>进程间通信（IPC Inter-Process Communication）</p>
+</blockquote>
+<ul>
+<li><p>共享资源互斥访问</p></li>
+<li><p>条件同步</p></li>
+<li><p>数据传输</p></li>
+</ul>
+<span id="more"></span>
+<h1 id="信号">信号</h1>
+<blockquote>
+<p>进程间的中断通知和处理机制</p>
+</blockquote>
+<ul>
+<li>例如：<code>SIGKILL</code>，<code>SIGSTOP</code>，<code>SIGCONT</code>等</li>
+<li>可以在任一时刻发送给某一个进程且无需直到进程的状态</li>
+<li>内核可以保存信号，再传递给进程</li>
+<li>信号可以被阻塞</li>
+</ul>
+<h2 id="信号的产生">信号的产生</h2>
+<h3 id="硬件方式">硬件方式</h3>
+<ul>
+<li>键盘<code>Ctrl+C</code>发送<code>SIGINT</code>信号</li>
+<li>CPU检测到硬件非法访问（例如内存），通知内核生成信号，发送给发生事件的进程</li>
+</ul>
+<h3 id="软件方式">软件方式</h3>
+<ul>
+<li>通过系统调用，发送<code>SIGKILL</code>信号等</li>
+</ul>
+<h2 id="信号的接收处理">信号的接收处理</h2>
+<ul>
+<li>捕获（<code>Catch</code>）
+<ul>
+<li>默认处理：执行操作系统指定的缺省处理，例如进程终止、进程挂起等</li>
+<li>自定义处理：执行进程指定的信号处理函数</li>
+</ul></li>
+<li>忽略（<code>Ignore</code>)
+<ul>
+<li>不对信号做任何处理</li>
+</ul></li>
+<li>屏蔽（<code>Mask</code>）
+<ul>
+<li>禁止进程接受和处理信号</li>
+<li>解除屏蔽后可以接受和处理信号</li>
+</ul></li>
+</ul>
+<h2 id="信号的实现">信号的实现</h2>
+<p><img src="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/image-20221020151124712.png" alt="image-20221020151124712" style="zoom:80%;" /></p>
+<h1 id="管道">管道</h1>
+<h2 id="管道的分类">管道的分类</h2>
+<h3 id="无名管道">无名管道</h3>
+<ul>
+<li>进程间基于内存文件的通信机制
+<ul>
+<li>内核缓冲区，数据单向流动，半双工通信</li>
+<li>读空或写满时，需要有相应的并发机制控制</li>
+<li>可以用<code>Read</code>，<code>Write</code>函数读写</li>
+</ul></li>
+<li>只能在具有亲缘关系的进程间使用，例如父子进程
+<ul>
+<li>子进程可以从父进程继承文件描述符</li>
+</ul></li>
+</ul>
+<h3 id="命名管道">命名管道</h3>
+<ul>
+<li>基于一种特殊设备文件的进程通信机制</li>
+<li>允许无亲缘关系的进程间通信</li>
+</ul>
+<h2 id="与管道有关的系统调用">与管道有关的系统调用</h2>
+<ul>
+<li>读管道（<code>read(fd,buffer,nbytes)</code>)
+<ul>
+<li>C语言中的<code>scanf()</code>就是基于它实现的</li>
+</ul></li>
+<li>写管道（<code>write(fd,buffer,nbytes)</code>)
+<ul>
+<li>C语言中的<code>printf()</code>就是基于它实现的</li>
+</ul></li>
+<li>创建管道（<code>pipe(fd[2])</code>）
+<ul>
+<li>fd是2个文件描述符组成的数组
+<ul>
+<li>fd[0]是读文件描述符</li>
+<li>fd[1]是写文件描述符</li>
+</ul></li>
+</ul></li>
+</ul>
+<h3 id="管道示例">管道示例</h3>
+<blockquote>
+<p>Shell 可以通过管道重定向输入输出流</p>
+</blockquote>
+<ul>
+<li>可能从键盘、文件、程序读取</li>
+<li>可能写入到终端、文件、程序</li>
+</ul>
+<p><img src="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/image-20221020153743147.png" alt="image-20221020153743147" style="zoom:80%;" /></p>
+<h1 id="消息队列">消息队列</h1>
+<blockquote>
+<p>消息队列是由操作系统维护的以字节序列为基本单位的间接通信机制</p>
+</blockquote>
+<ul>
+<li><p>独立于发送和接收进程</p></li>
+<li><p>每个消息是一个字节序列</p></li>
+<li><p>相同标识的消息按照先进先出的顺序组成一个消息队列</p></li>
+</ul>
+<p><img src="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/image-20221020153928170.png" alt="image-20221020153928170" style="zoom:80%;" /></p>
+<h3 id="消息队列的系统调用">消息队列的系统调用</h3>
+<ul>
+<li><code>msgget(key,flags)</code>
+<ul>
+<li>获取消息队列标识</li>
+</ul></li>
+<li><code>msgsnd(QID,buf,size,flags)</code>
+<ul>
+<li>发送消息</li>
+</ul></li>
+<li><code>msgrcv(QID,buf,size,type,flags)</code>
+<ul>
+<li>接收消息</li>
+</ul></li>
+<li><code>msgctl(...)</code>
+<ul>
+<li>消息队列控制</li>
+</ul></li>
+</ul>
+<h1 id="共享内存">共享内存</h1>
+<blockquote>
+<p>共享内存是操作系统把同一个物理内存区域同时映射到多个进程的内存地址空间的通信机制</p>
+</blockquote>
+<ul>
+<li>每个进程将共享内存区域映射到私有地址空间</li>
+<li>必须用额外的同步机制来协调数据访问</li>
+<li>优点：快速、方便地共享数据</li>
+</ul>
+<p><img src="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/image-20221020155342022.png" alt="image-20221020155342022" style="zoom:80%;" /></p>
+<h2 id="共享内存系统调用">共享内存系统调用</h2>
+<ul>
+<li><code>shmget(key,size,flags)</code>
+<ul>
+<li>创建或获取一个共享段</li>
+</ul></li>
+<li><code>shmat(shmid,*shmaddr,flags)</code>
+<ul>
+<li>把共享段映射到进程地址空间</li>
+<li>返回指向共享内存的指针</li>
+</ul></li>
+<li><code>shmdt(*shmaddr)</code>
+<ul>
+<li>取消共享段到进程地址空间的映射</li>
+</ul></li>
+<li><code>shmctl(...)</code>
+<ul>
+<li>共享段控制</li>
+</ul></li>
+</ul>
+<h1 id="套嵌字socket-api">套嵌字（Socket API）</h1>
+<blockquote>
+<p>TCP/UDP的抽象</p>
+</blockquote>
+<ul>
+<li>寻址：IP地址和端口</li>
+<li>创建和关闭<code>socket</code>
+<ul>
+<li><code>sockid=socket(af,type,proto);</code></li>
+<li><code>sockerr=close(sockid);</code></li>
+</ul></li>
+<li>绑定<code>socket</code>到本地地址
+<ul>
+<li><code>sockerr=bind(sockid,localaddr,addrlen);</code></li>
+</ul></li>
+<li>监听与接收
+<ul>
+<li><code>listen(sockid,len);</code></li>
+<li><code>accept(sockid,addr,len);</code></li>
+</ul></li>
+<li>连接<code>socket</code>到目标地址
+<ul>
+<li><code>connect(sockid,destaddr,addrlen)</code></li>
+</ul></li>
+</ul>
+<h1 id="ipc方式对比">IPC方式对比</h1>
+<ul>
+<li>信号
+<ul>
+<li>传送的信息量小，只有一个信号类型</li>
+</ul></li>
+<li>管道
+<ul>
+<li>半双工方式，单向通信；无格式字节流</li>
+<li>需进程打开、关闭管道</li>
+</ul></li>
+<li>消息队列
+<ul>
+<li>缓冲区大小受限（KB级别）</li>
+</ul></li>
+<li>共享内存
+<ul>
+<li>通信效率高，但需要信号量等机制协调共享内存的访问冲突</li>
+</ul></li>
+<li>套嵌字（Socket）
+<ul>
+<li>用于不同机器的进程间通信</li>
+<li>需要对数据进行封包和解包操作</li>
+</ul></li>
+</ul>
+<h1 id="ipc设计考虑">IPC设计考虑</h1>
+<h2 id="设计考虑">设计考虑</h2>
+<h3 id="进程间通信的基本原语">进程间通信的基本原语</h3>
+<ul>
+<li>Send(msg)，Receive(msg)</li>
+</ul>
+<h3 id="进程通信流程">进程通信流程</h3>
+<ul>
+<li>建立通信链路
+<ul>
+<li>内存、设备文件、网络</li>
+</ul></li>
+<li>Send/Recv 交换数据
+<ul>
+<li>是否缓冲消息</li>
+<li>直接通信 vs 间接通信</li>
+<li>同步 vs 异步</li>
+<li>例外处理</li>
+</ul></li>
+</ul>
+<h2 id="缓冲消息">缓冲消息</h2>
+<h3 id="无缓冲">无缓冲</h3>
+<ul>
+<li>发送方必须等到接收方接收消息</li>
+<li>每个消息都需要握手</li>
+</ul>
+<h3 id="有界缓冲">有界缓冲</h3>
+<ul>
+<li>缓冲区长度有限</li>
+<li>缓冲区满则发送方阻塞</li>
+</ul>
+<h3 id="无界缓冲">无界缓冲</h3>
+<ul>
+<li>“无限”长度</li>
+<li>发送方永远不会阻塞</li>
+<li>实际应用受限</li>
+</ul>
+<h2 id="直接通信-vs-间接通信">直接通信 VS 间接通信</h2>
+<h3 id="直接通信">直接通信</h3>
+<ul>
+<li>通信进程明确指定接收者或发送者
+<ul>
+<li>Send(P,msg)</li>
+<li>Recv(C,msg)</li>
+</ul></li>
+</ul>
+<h3 id="间接通信">间接通信</h3>
+<ul>
+<li>使用信箱
+<ul>
+<li>允许多对多的通信</li>
+<li>需要打开/关闭信箱</li>
+<li>Send(A,msg)/Recv(A,msg)</li>
+</ul></li>
+<li>缓冲区
+<ul>
+<li>信箱内需要有一个缓冲区、互斥锁和条件变量</li>
+</ul></li>
+<li>消息长度
+<ul>
+<li>不确定，可以把大消息切成多个包发送</li>
+</ul></li>
+<li>信箱和管道的对比
+<ul>
+<li>信息允许多对多的通信</li>
+<li>管道隐含了一个发送，一个接收</li>
+</ul></li>
+</ul>
+<h2 id="同步和异步">同步和异步</h2>
+<h3 id="发送">发送</h3>
+<ul>
+<li>同步发送
+<ul>
+<li>发送进程阻塞，直到消息由接收进程收到</li>
+<li>若使用缓冲，启动数据传输直到源缓冲用完后再阻塞</li>
+</ul></li>
+<li>异步发送
+<ul>
+<li>发送进程调用<code>async_send</code>启动数据传输后，继续执行其他操作</li>
+<li>结束后
+<ul>
+<li>需要应用检查状态</li>
+<li>通知或者向应用发送信号</li>
+</ul></li>
+</ul></li>
+</ul>
+<h3 id="接收">接收</h3>
+<ul>
+<li>同步接收
+<ul>
+<li>接收进程阻塞，直到有消息可用</li>
+<li>如果有消息，则返回数据</li>
+</ul></li>
+<li>异步接收
+<ul>
+<li>如果有消息，则返回数据</li>
+<li>如果无消息，则返回状态</li>
+</ul></li>
+</ul>
+<h1 id="例外处理">例外处理</h1>
+<h2 id="进程结束">进程结束</h2>
+<ul>
+<li>R等待S发生的消息，但S已经结束
+<ul>
+<li><strong>问题</strong>：同步接收时，R会永久阻塞</li>
+<li><strong>解决</strong>：等待超时</li>
+</ul></li>
+<li>S发送一个消息给R，但R已经结束
+<ul>
+<li><strong>问题</strong>：同步发送时，S会永久阻塞</li>
+<li><strong>解决</strong>：发送超时</li>
+</ul></li>
+</ul>
+<h2 id="消息丢失">消息丢失</h2>
+<blockquote>
+<p>使用确认（ACK）和超时（TIMEOUT）检测和重传消息</p>
+</blockquote>
+<ul>
+<li>需要接收者没收到一个消息后发送一个确认</li>
+<li>发送者阻塞直到<code>ACK</code>到达或者超时</li>
+<li>如果超时发生且没收到确认，重发消息</li>
+</ul>
+<p><strong>问题：如果消息没有丢失，重复发送了消息怎么办？</strong></p>
+<blockquote>
+<p>重传：接收端收到的消息重复</p>
+</blockquote>
+<p><strong>解决办法：</strong></p>
+<ul>
+<li>使用序列号确认是否重复</li>
+<li>在接收端删掉重复消息</li>
+</ul>
+<p><strong>减少确认消息：</strong></p>
+<ul>
+<li>批量传送确认</li>
+<li>接收者发送<code>noack</code></li>
+</ul>
+<h2 id="消息损坏">消息损坏</h2>
+<h3 id="检测方法">检测方法</h3>
+<ul>
+<li>发送端计算整个消息的校验和，并随消息发送校验和（CRC）</li>
+<li>在接收端重新计算校验和，并和消息中的校验和对比</li>
+</ul>
+<h3 id="纠正方法">纠正方法</h3>
+<ul>
+<li>重传</li>
+<li>使用纠错码恢复</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div class="post-widgets">
+      <div id="needsharebutton-postbottom">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    </div>
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>JamesYu
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="https://blog.jamesyuuu.me/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1/" title="进程间通信">https://blog.jamesyuuu.me/操作系统/进程间通信/</a>
+  </li>
+  <li class="post-copyright-license">
+      <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzQuMC9kZWVkLnpo"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</span> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E7%AC%94%E8%AE%B0/" rel="tag"><i class="fa fa-tag"></i> 笔记</a>
+              <a href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag"><i class="fa fa-tag"></i> 操作系统</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E4%BF%A1%E5%8F%B7%E9%87%8F%E4%B8%8E%E7%AE%A1%E7%A8%8B/" rel="prev" title="信号量与管程">
+                  <i class="fa fa-angle-left"></i> 信号量与管程
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E8%99%9A%E5%AD%98%E5%92%8C%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2/" rel="next" title="虚存和地址转换">
+                  虚存和地址转换 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments" id="lv-container" data-id="city" data-uid="MTAyMC81NTk2Mi8zMjQyNQ"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 2022 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">JamesYu</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">64k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">3:52</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <span class="exturl" data-url="aHR0cHM6Ly9oZXhvLmlv">Hexo</span> & <span class="exturl" data-url="aHR0cHM6Ly90aGVtZS1uZXh0LmpzLm9yZw==">NexT.Gemini</span> 强力驱动
+  </div>
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/gh/stevenjoezhang/live2d-widget@latest/autoload.js"></script>
+  </footer>
+
+  
+  <script size="300" alpha="0.6" zIndex="-1" src="https://cdn.jsdelivr.net/npm/ribbon.js@1.0.2/dist/ribbon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script><script src="/js/bookmark.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.2.12/pdfobject.min.js","integrity":"sha256-g2xji1rlE3KsGVClvuxTbcR0Kn2+wtQADSff2Tbb4zA="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@10.5.0/dist/mermaid.min.js","integrity":"sha256-K7oJiQlDulzl24ZUFOywuYme1JqBBvQzK6m8qHjt9Gk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+
+
+  <script src="/js/third-party/pace.js"></script>
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/darkmode-js@1.5.7/lib/darkmode-js.min.js"></script>
+
+<script>
+var options = {
+  bottom: '64px',
+  right: '32px',
+  left: 'unset',
+  time: '0.5s',
+  mixColor: 'transparent',
+  backgroundColor: 'transparent',
+  buttonColorDark: '#100f2c',
+  buttonColorLight: '#fff',
+  saveInCookies: true,
+  label: '🌓',
+  autoMatchOsTheme: true
+}
+const darkmode = new Darkmode(options);
+window.darkmode = darkmode;
+darkmode.showWidget();
+</script>
+
+  <script src="//cdn.jsdelivr.net/gh/theme-next/theme-next-needmoreshare2@1/needsharebutton.min.js"></script>
+  <script>
+      pbOptions = {};
+        pbOptions.iconStyle = "box";
+        pbOptions.boxForm = "horizontal";
+        pbOptions.position = "bottomCenter";
+        pbOptions.networks = "Weibo,Wechat,Douban,QQZone,Twitter,Facebook";
+      new needShareButton('#needsharebutton-postbottom', pbOptions);
+  </script><script src="/js/third-party/comments/livere.js"></script>
+
+</body>
+</html>

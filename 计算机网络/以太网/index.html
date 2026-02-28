@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="baidu-site-verification" content="PTwOehQpzZ">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.2/css/all.min.css" integrity="sha256-CTSx/A06dm1B063156EVh15m6Y67pAjZZaQc89LLSrU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/themes/blue/pace-theme-minimal.css">
+  <script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous"></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"blog.jamesyuuu.me","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.2","exturl":true,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":true,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="以太网 两种链路类型  点对点链路  高级数据链路控制协议 (High-level Data Link Control, HDLC) 点对点协议(Point-to-Point Protocol, PPP)   广播链路  以太网(Ethernet), IEEE 802.3 无线局域网(Wireless Lan, WLAN), IEEE 802.11   网络分类  广域网 WAN (Wide Ar">
+<meta property="og:type" content="article">
+<meta property="og:title" content="以太网">
+<meta property="og:url" content="https://blog.jamesyuuu.me/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E4%BB%A5%E5%A4%AA%E7%BD%91/index.html">
+<meta property="og:site_name" content="JamesYu&#39;s Hut">
+<meta property="og:description" content="以太网 两种链路类型  点对点链路  高级数据链路控制协议 (High-level Data Link Control, HDLC) 点对点协议(Point-to-Point Protocol, PPP)   广播链路  以太网(Ethernet), IEEE 802.3 无线局域网(Wireless Lan, WLAN), IEEE 802.11   网络分类  广域网 WAN (Wide Ar">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/image-20231027221915919.png">
+<meta property="article:published_time" content="2023-10-27T12:22:00.000Z">
+<meta property="article:modified_time" content="2026-02-28T13:01:35.715Z">
+<meta property="article:author" content="JamesYu">
+<meta property="article:tag" content="笔记">
+<meta property="article:tag" content="计算机网络">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/image-20231027221915919.png">
+
+
+<link rel="canonical" href="https://blog.jamesyuuu.me/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E4%BB%A5%E5%A4%AA%E7%BD%91/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://blog.jamesyuuu.me/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E4%BB%A5%E5%A4%AA%E7%BD%91/","path":"计算机网络/以太网/","title":"以太网"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>以太网 | JamesYu's Hut</title>
+  
+
+
+
+
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/gh/theme-next/theme-next-needmoreshare2@1/needsharebutton.min.css"><style>
+#needsharebutton-postbottom {
+  cursor: pointer;
+  height: 26px;
+  margin-top: 10px;
+  position: relative;
+}
+#needsharebutton-postbottom .btn {
+  border: 1px solid $btn-default-border-color;
+  border-radius: 3px;
+  display: initial;
+  padding: 1px 4px;
+}
+</style>
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css">
+<style>.darkmode--activated{--body-bg-color:#282828;--content-bg-color:#333;--card-bg-color:#555;--text-color:#ccc;--blockquote-color:#bbb;--link-color:#ccc;--link-hover-color:#eee;--brand-color:#ddd;--brand-hover-color:#ddd;--table-row-odd-bg-color:#282828;--table-row-hover-bg-color:#363636;--menu-item-bg-color:#555;--btn-default-bg:#222;--btn-default-color:#ccc;--btn-default-border-color:#555;--btn-default-hover-bg:#666;--btn-default-hover-color:#ccc;--btn-default-hover-border-color:#666;--highlight-background:#282b2e;--highlight-foreground:#a9b7c6;--highlight-gutter-background:#34393d;--highlight-gutter-foreground:#9ca9b6}.darkmode--activated img{opacity:.75}.darkmode--activated img:hover{opacity:.9}.darkmode--activated code{color:#69dbdc;background:0 0}button.darkmode-toggle{z-index:9999}.darkmode-ignore,img{display:flex!important}.beian img{display:inline-block!important}</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">JamesYu's Hut</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Game | Bangumi</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">7</span></a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">3</span></a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">36</span></a></li><li class="menu-item menu-item-观影"><a href="/movies/index.html" rel="section"><i class="fa fa-film fa-fw"></i>观影</a></li><li class="menu-item menu-item-追番"><a href="/bangumis/index.html" rel="section"><i class="fa fa-video-camera fa-fw"></i>追番</a></li><li class="menu-item menu-item-追剧"><a href="/cinemas/index.html" rel="section"><i class="fa fa-television fa-fw"></i>追剧</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%A5%E5%A4%AA%E7%BD%91"><span class="nav-number">1.</span> <span class="nav-text">以太网</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%A4%E7%A7%8D%E9%93%BE%E8%B7%AF%E7%B1%BB%E5%9E%8B"><span class="nav-number">1.1.</span> <span class="nav-text">两种链路类型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BD%91%E7%BB%9C%E5%88%86%E7%B1%BB"><span class="nav-number">1.2.</span> <span class="nav-text">网络分类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%A5%E5%A4%AA%E7%BD%91%E7%9A%84%E5%9F%BA%E6%9C%AC%E4%BF%A1%E6%81%AF"><span class="nav-number">1.3.</span> <span class="nav-text">以太网的基本信息</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%A5%E5%A4%AA%E7%BD%91%E5%8F%91%E5%B1%95%E5%8E%86%E5%8F%B2"><span class="nav-number">1.3.1.</span> <span class="nav-text">以太网发展历史</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%A5%E5%A4%AA%E7%BD%91%E5%9F%BA%E6%9C%AC%E7%BB%84%E6%88%90"><span class="nav-number">1.3.2.</span> <span class="nav-text">以太网基本组成</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ieee-802.3-%E8%A7%84%E8%8C%83"><span class="nav-number">1.3.3.</span> <span class="nav-text">IEEE 802.3 规范</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%A5%E5%A4%AA%E7%BD%91%E4%BC%A0%E8%BE%93%E4%BB%8B%E8%B4%A8%E6%A0%87%E5%87%86"><span class="nav-number">1.3.4.</span> <span class="nav-text">以太网传输介质标准</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%80%BB%E7%BA%BF%E5%9E%8B%E4%BB%A5%E5%A4%AA%E7%BD%91"><span class="nav-number">1.3.4.1.</span> <span class="nav-text">总线型以太网</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%98%9F%E5%BD%A2%E4%BB%A5%E5%A4%AA%E7%BD%91"><span class="nav-number">1.3.4.2.</span> <span class="nav-text">星形以太网</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%A5%E5%A4%AA%E7%BD%91%E5%B8%A7%E7%BB%93%E6%9E%84"><span class="nav-number">1.3.5.</span> <span class="nav-text">以太网帧结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%B0%E5%9D%80"><span class="nav-number">1.3.6.</span> <span class="nav-text">地址</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%A5%E5%A4%AA%E7%BD%91%E4%B8%BB%E6%9C%BA%E6%8E%A5%E6%94%B6%E6%95%B0%E6%8D%AE%E6%96%B9%E5%BC%8F"><span class="nav-number">1.3.7.</span> <span class="nav-text">以太网主机接收数据方式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%A5%E5%A4%AA%E7%BD%91%E4%B8%8D%E6%8F%90%E4%BE%9B%E5%8F%AF%E9%9D%A0%E4%BC%A0%E8%BE%93"><span class="nav-number">1.3.8.</span> <span class="nav-text">以太网不提供可靠传输</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%A5%E5%A4%AA%E7%BD%91%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88"><span class="nav-number">1.3.9.</span> <span class="nav-text">以太网的解决方案</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%89%A9%E5%B1%95%E4%BB%A5%E5%A4%AA%E7%BD%91"><span class="nav-number">1.3.10.</span> <span class="nav-text">扩展以太网</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%A5%E5%A4%AA%E7%BD%91%E8%AF%84%E4%BB%B7"><span class="nav-number">1.4.</span> <span class="nav-text">以太网评价</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="JamesYu"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">JamesYu</p>
+  <div class="site-description" itemprop="description">A Game and Bangumi Database For Private Use</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">36</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL0phbWVzWXV1dQ==" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;JamesYuuu"><i class="fab fa-github fa-fw"></i>GitHub</span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9pbnN0YWdyYW0uY29tL2phbWVzeXUzMg==" title="Instagram → https:&#x2F;&#x2F;instagram.com&#x2F;jamesyu32"><i class="fab fa-instagram fa-fw"></i>Instagram</span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9zcGFjZS5iaWxpYmlsaS5jb20vMTgyODA5NTQ5" title="Bilibili → https:&#x2F;&#x2F;space.bilibili.com&#x2F;182809549"><i class="fab fa-bilibili fa-fw"></i>Bilibili</span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cuemhpaHUuY29tL3Blb3BsZS95aWdlLWRhLXNodWFpLWJpLTQw" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;yige-da-shuai-bi-40"><i class="fab fa-zhihu fa-fw"></i>Zhihu</span>
+      </span>
+  </div>
+  <div class="cc-license animated" itemprop="license">
+    <span class="exturl cc-opacity" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzQuMC9kZWVkLnpo"><img src="https://cdn.jsdelivr.net/npm/@creativecommons/vocabulary@2020.11.3/assets/license_badges/small/by_nc_sa.svg" alt="Creative Commons"></span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+        <div class="sidebar-inner sidebar-post-related">
+          <div class="animated">
+              <div class="links-of-blogroll-title"><i class="fa fa-signs-post fa-fw"></i>
+    相关文章
+  </div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <a class="popular-posts-link" href="/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E7%BD%91%E7%BB%9C%E6%9E%84%E4%BB%B6/" rel="bookmark">
+        <time class="popular-posts-time">2023-10-26</time>
+        <br>
+      网络构件
+      </a>
+    </li>
+  </ul>
+
+          </div>
+        </div>
+  </aside>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+  <span class="exturl github-corner" data-url="aHR0cHM6Ly9naXRodWIuY29tL0phbWVzWXV1dQ==" title="在 GitHub 上关注我" aria-label="在 GitHub 上关注我"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></span>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://blog.jamesyuuu.me/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E4%BB%A5%E5%A4%AA%E7%BD%91/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="JamesYu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="JamesYu's Hut">
+      <meta itemprop="description" content="A Game and Bangumi Database For Private Use">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="以太网 | JamesYu's Hut">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          以太网<span class="exturl post-edit-link" data-url="aHR0cHM6Ly9naXRodWIuY29tL0phbWVzWXV1dS9IZXhvLUJsb2cvdHJlZS9tYWluL3NvdXJjZS9fcG9zdHMv6K6h566X5py6572R57ucL+S7peWkque9kS5tZA==" title="编辑"><i class="fa fa-pen-nib"></i></span>
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2023-10-27 20:22:00" itemprop="dateCreated datePublished" datetime="2023-10-27T20:22:00+08:00">2023-10-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-02-28 21:01:35" itemprop="dateModified" datetime="2026-02-28T21:01:35+08:00">2026-02-28</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Study/" itemprop="url" rel="index"><span itemprop="name">Study</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>1.8k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>7 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="以太网">以太网</h1>
+<h2 id="两种链路类型">两种链路类型</h2>
+<ul>
+<li>点对点链路
+<ul>
+<li>高级数据链路控制协议 (High-level Data Link Control, HDLC)</li>
+<li>点对点协议(Point-to-Point Protocol, PPP)<br />
+</li>
+</ul></li>
+<li>广播链路
+<ul>
+<li>以太网(Ethernet), IEEE 802.3</li>
+<li>无线局域网(Wireless Lan, WLAN), IEEE 802.11</li>
+</ul></li>
+</ul>
+<h2 id="网络分类">网络分类</h2>
+<ul>
+<li><p>广域网 WAN (Wide Area Network)</p></li>
+<li><p>城域网 MAN (Metropolitan Area Network)</p></li>
+<li><p>局域网 LAN (Local Area Network)</p>
+<ul>
+<li>特点
+<ul>
+<li>覆盖范围小：房间、建筑物、园区，距离≤25km</li>
+<li>高传输速率：10Mbps～1000Mbps</li>
+<li>低误码率：10-8 ～ 10-10</li>
+<li>拓扑：总线、星形、环形、树形</li>
+<li>传输媒体：双绞线、同轴电缆、光纤</li>
+</ul></li>
+<li>典型技术
+<ul>
+<li>以太网(Ethernet)</li>
+<li>令牌环网 (Token Ring)</li>
+<li>FDDI(Fiber Distributed Data Interface)</li>
+</ul></li>
+<li>IEEE 802标准体系（局域网、城域网标准）
+<ul>
+<li>为使数据链路层更好地适应多种局域网标准，将其拆成两个子层
+<ul>
+<li>逻辑链路控制 LLC (Logical Link Control)子层
+<ul>
+<li>传输媒体与LLC 子层无关</li>
+<li>采用何种协议的局域网对 LLC 子层都透明</li>
+</ul></li>
+<li>媒体接入控制 MAC (Medium Access Control)子层
+<ul>
+<li>与接入到传输媒体有关的内容都放在 MAC子层</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+<figure>
+<img
+src="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/image-20231027221008918.png"
+alt="image-20231027221008918" />
+<figcaption aria-hidden="true">image-20231027221008918</figcaption>
+</figure></li>
+<li><p>个域网 PAN (Personal Area Network)</p></li>
+</ul>
+<h2 id="以太网的基本信息">以太网的基本信息</h2>
+<h3 id="以太网发展历史">以太网发展历史</h3>
+<ul>
+<li>20世纪70年代中期
+<ul>
+<li>诞生于美国施乐公司(Xerox)的帕洛阿尔托研究中心(PARC)</li>
+<li>总线拓扑、同轴电缆、广播局域网、半双工</li>
+</ul></li>
+<li>20世纪90年代后期
+<ul>
+<li>基于集线器的星形拓扑、双绞线、广播局域网、半双工</li>
+<li>集线器(Hub)：物理层设备，作用于比特而不是帧</li>
+</ul></li>
+<li>本世纪初
+<ul>
+<li>基于交换机的星形拓扑、双绞线、交换局域网、全双工</li>
+<li>交换机(Switch)：二层设备</li>
+</ul></li>
+</ul>
+<h3 id="以太网基本组成">以太网基本组成</h3>
+<ul>
+<li>传输介质(链路)
+<ul>
+<li>同轴电缆</li>
+<li>双绞线</li>
+<li>光纤</li>
+</ul></li>
+<li>网络适配器</li>
+<li>中继设备
+<ul>
+<li>中继器(Repeater)</li>
+<li>集线器(Hub)</li>
+</ul></li>
+<li>交换设备
+<ul>
+<li>网桥 (Bridge)</li>
+<li>交换机 (Switch)</li>
+</ul></li>
+</ul>
+<h3 id="ieee-802.3-规范">IEEE 802.3 规范</h3>
+<ul>
+<li>传统以太网
+<ul>
+<li>IEEE 802.3 —— 同轴电缆Ethernet</li>
+<li>IEEE 802.3a ——细缆Ethernet</li>
+<li>IEEE 802.3i —— 双绞线</li>
+<li>IEEE 802.3j —— 光纤</li>
+</ul></li>
+<li>快速以太网FE
+<ul>
+<li>IEEE 802.3u ——双绞线，光纤</li>
+</ul></li>
+<li>千兆以太网GE
+<ul>
+<li>IEEE 802.3z —— 屏蔽短双绞线、光纤</li>
+<li>IEEE 802.3ab —— 双绞线</li>
+</ul></li>
+</ul>
+<h3 id="以太网传输介质标准">以太网传输介质标准</h3>
+<blockquote>
+<p>IEEE 802.3文档规定，由3部分组成</p>
+</blockquote>
+<p><img src="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/image-20231027221915919.png" alt="image-20231027221915919" style="zoom:50%;" /></p>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: center;">10Base5</th>
+<th style="text-align: center;">粗同轴</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">10Base2</td>
+<td style="text-align: center;">细同轴</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">10BaseT</td>
+<td style="text-align: center;">双绞线</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">10BaseF</td>
+<td style="text-align: center;">多模光纤MMF</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">100BaseT</td>
+<td style="text-align: center;">双绞线SMF</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">100BaseF</td>
+<td style="text-align: center;">多模/单模光纤</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">1000BaseX</td>
+<td style="text-align: center;">屏蔽短双绞线/MMF/SMF</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">1000BaseT</td>
+<td style="text-align: center;">双绞线</td>
+</tr>
+</tbody>
+</table>
+<h4 id="总线型以太网">总线型以太网</h4>
+<ul>
+<li>10Base5，粗同轴电缆， IEEE 802.3a
+<ul>
+<li>可靠性好，抗干扰能力强</li>
+<li>插入式分接头，其触针插入到同轴电缆内芯
+<ul>
+<li>收发器 : 发送/接收</li>
+<li>AUI : 连接件单元接口</li>
+</ul></li>
+</ul></li>
+<li>10Base2，细同轴电缆，IEEE 802.3a
+<ul>
+<li>可靠性稍差</li>
+<li>接头处采用工业标准的BNC连接器组成T型插座，使用灵活</li>
+</ul></li>
+</ul>
+<h4 id="星形以太网">星形以太网</h4>
+<ul>
+<li>10BaseT，双绞线介质，IEEE 802.3i
+<ul>
+<li>双绞线总是配合集线器使用</li>
+<li>集线器(Hub)：物理层设备，简单转发比特</li>
+<li>拓扑结构为星形，逻辑上仍是总线型网络，使用CSMA/CD</li>
+<li>每个主机通过两对双绞线与Hub相连，发送/接收各1对</li>
+<li>便宜，增添或移去站点(主机)变得十分简单，容易检测到电缆故障</li>
+</ul></li>
+</ul>
+<h3 id="以太网帧结构">以太网帧结构</h3>
+<figure>
+<img
+src="https://raw.githubusercontent.com/JamesYuuu/Picbed/main/image-20231027222228419.png"
+alt="image-20231027222228419" />
+<figcaption aria-hidden="true">image-20231027222228419</figcaption>
+</figure>
+<ul>
+<li>帧前面插入8字节
+<ul>
+<li>7 字节前同步码：用来实现 MAC 帧的比特同步</li>
+<li>1个字节的帧开始定界符：表示后面的信息就是MAC 帧</li>
+</ul></li>
+<li>目标地址：6字节</li>
+<li>源地址：6字节</li>
+<li>类型：2字节
+<ul>
+<li>用作多路分解，标志上一层使用的是什么协议，以把收到的 MAC
+帧的数据上交给上一层的这个协议</li>
+</ul></li>
+<li>数据字段：最小46字节
+<ul>
+<li>最大 MTU 为 1500字节</li>
+<li>最小帧 64字节 - 首尾共18字节</li>
+<li>以太网采用CSMA/CD协议，为了避免碰撞检测，最小64字节</li>
+</ul></li>
+<li>CRC：4字节</li>
+<li>帧尾部表示帧发送结束的方法
+<ul>
+<li>对100M以太网
+<ul>
+<li>物理层设备会自动在帧尾加上4B5B编码ESD字段（长度为两个5bits）</li>
+</ul></li>
+<li>对10M以太网
+<ul>
+<li>会以一个特殊宽脉冲SOI来表示链路开始空闲</li>
+</ul></li>
+</ul></li>
+</ul>
+<h3 id="地址">地址</h3>
+<ul>
+<li>每个适配器有一个唯一的以太网地址，通常固化在ROM中
+<ul>
+<li>称为硬件地址、网卡的物理地址、MAC 地址</li>
+<li>严格地讲应当是每一个站的“名字”或标识符，而非地址</li>
+</ul></li>
+<li>以可读的方式显示(如ipconfig命令)，即由冒号分隔的6个数
+<ul>
+<li>每个数对应于6字节地址的1个字节，由一对16进制数给出，每个16进制数对应4比特，而且去掉前导0</li>
+<li>例，8:0:2b:e4:b1:2是可读的一个以太网地址，表示： 00001000 00000000
+00101011 11100100 10110001 00000010</li>
+</ul></li>
+<li>MAC地址分配
+<ul>
+<li>IEEE 的注册管理机构 RA 负责向厂家分配地址字段的前3个字节(即高位 23
+位，其中第一字节的最低位表示单播/组播地址，单播“0”)</li>
+<li>后3个字节(即低位 24
+位)由厂家自行指派，称为扩展标识符，必须保证生产出的适配器没有重复地址</li>
+</ul></li>
+</ul>
+<h3 id="以太网主机接收数据方式">以太网主机接收数据方式</h3>
+<ul>
+<li>以太网适配器接收(receive)所有帧
+<ul>
+<li>广播信道，所有主机在一个广播域</li>
+</ul></li>
+<li>但以太网适配器只接受(accept)
+<ul>
+<li>编址到它自己地址的帧</li>
+<li>编址到广播地址的帧</li>
+<li>编址到多点播送地址的帧，如果适配器在监听那个地址</li>
+<li>所有帧，如果适配器处于混杂模式</li>
+</ul></li>
+<li>以太网适配器只向主机传递它接受的帧</li>
+</ul>
+<h3 id="以太网不提供可靠传输">以太网不提供可靠传输</h3>
+<ul>
+<li>提供的服务是尽最大努力的交付，即不可靠的交付
+<ul>
+<li>对发送的数据帧不进行编号，也不要求对方发回确认</li>
+<li>当目的站收到有差错的数据帧时丢弃，差错的纠正由高层决定</li>
+<li>如果高层进行重传，以太网并不知道这是重传帧，当作新的帧发送</li>
+</ul></li>
+<li>无效帧
+<ul>
+<li>帧的长度不是整数个字节</li>
+<li>用收到的帧检验序列 CRC查出有差错</li>
+<li>数据字段的长度不在 46 ~ 1500 字节之间
+<ul>
+<li>有效的 MAC 帧长度为 64 ~ 1518 字节之间</li>
+</ul></li>
+</ul></li>
+</ul>
+<h3 id="以太网的解决方案">以太网的解决方案</h3>
+<ul>
+<li>编码：曼彻斯特码、4B/5B</li>
+<li>组帧：面向比特</li>
+<li>差错检测：CRC</li>
+<li>可靠传输：不提供，尽力交付</li>
+<li>媒体共享：CSMA/CD</li>
+</ul>
+<h3 id="扩展以太网">扩展以太网</h3>
+<ul>
+<li>在物理层扩展
+<ul>
+<li>光纤：扩展主机与Hub、Hub与Hub距离</li>
+<li>多个Hub：扩展为覆盖范围更广、连接结点更多的多级星形结构 (树形)</li>
+</ul></li>
+<li>在数据链路层扩展
+<ul>
+<li>网桥 (Bridge)、二层交换机 (Switch)</li>
+<li>演变为交换网络，不再是广播域</li>
+</ul></li>
+</ul>
+<h2 id="以太网评价">以太网评价</h2>
+<ul>
+<li>以太网基本上统治了有线局域网</li>
+<li>以太网的优点
+<ul>
+<li>便宜，高速，易于使用、管理和扩展</li>
+</ul></li>
+<li>总线型以太网的缺点
+<ul>
+<li>数据包越小，传输单位数据的代价越大</li>
+<li>用户数增加时，更容易发生碰撞</li>
+<li>链路变长时，需要更长时间来检测碰撞</li>
+<li>网络负载越大，传输性能越低</li>
+</ul></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div class="post-widgets">
+      <div id="needsharebutton-postbottom">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    </div>
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>JamesYu
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="https://blog.jamesyuuu.me/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E4%BB%A5%E5%A4%AA%E7%BD%91/" title="以太网">https://blog.jamesyuuu.me/计算机网络/以太网/</a>
+  </li>
+  <li class="post-copyright-license">
+      <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzQuMC9kZWVkLnpo"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</span> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E7%AC%94%E8%AE%B0/" rel="tag"><i class="fa fa-tag"></i> 笔记</a>
+              <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" rel="tag"><i class="fa fa-tag"></i> 计算机网络</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E5%AA%92%E4%BD%93%E5%85%B1%E4%BA%AB/" rel="prev" title="媒体共享">
+                  <i class="fa fa-angle-left"></i> 媒体共享
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E4%BA%A4%E6%8D%A2%E7%BD%91%E7%BB%9C/" rel="next" title="交换网络">
+                  交换网络 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments" id="lv-container" data-id="city" data-uid="MTAyMC81NTk2Mi8zMjQyNQ"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 2022 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">JamesYu</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">64k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">3:52</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <span class="exturl" data-url="aHR0cHM6Ly9oZXhvLmlv">Hexo</span> & <span class="exturl" data-url="aHR0cHM6Ly90aGVtZS1uZXh0LmpzLm9yZw==">NexT.Gemini</span> 强力驱动
+  </div>
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/gh/stevenjoezhang/live2d-widget@latest/autoload.js"></script>
+  </footer>
+
+  
+  <script size="300" alpha="0.6" zIndex="-1" src="https://cdn.jsdelivr.net/npm/ribbon.js@1.0.2/dist/ribbon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script><script src="/js/bookmark.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.2.12/pdfobject.min.js","integrity":"sha256-g2xji1rlE3KsGVClvuxTbcR0Kn2+wtQADSff2Tbb4zA="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@10.5.0/dist/mermaid.min.js","integrity":"sha256-K7oJiQlDulzl24ZUFOywuYme1JqBBvQzK6m8qHjt9Gk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+
+
+  <script src="/js/third-party/pace.js"></script>
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/darkmode-js@1.5.7/lib/darkmode-js.min.js"></script>
+
+<script>
+var options = {
+  bottom: '64px',
+  right: '32px',
+  left: 'unset',
+  time: '0.5s',
+  mixColor: 'transparent',
+  backgroundColor: 'transparent',
+  buttonColorDark: '#100f2c',
+  buttonColorLight: '#fff',
+  saveInCookies: true,
+  label: '🌓',
+  autoMatchOsTheme: true
+}
+const darkmode = new Darkmode(options);
+window.darkmode = darkmode;
+darkmode.showWidget();
+</script>
+
+  <script src="//cdn.jsdelivr.net/gh/theme-next/theme-next-needmoreshare2@1/needsharebutton.min.js"></script>
+  <script>
+      pbOptions = {};
+        pbOptions.iconStyle = "box";
+        pbOptions.boxForm = "horizontal";
+        pbOptions.position = "bottomCenter";
+        pbOptions.networks = "Weibo,Wechat,Douban,QQZone,Twitter,Facebook";
+      new needShareButton('#needsharebutton-postbottom', pbOptions);
+  </script><script src="/js/third-party/comments/livere.js"></script>
+
+</body>
+</html>

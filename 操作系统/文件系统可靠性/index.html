@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="baidu-site-verification" content="PTwOehQpzZ">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.2/css/all.min.css" integrity="sha256-CTSx/A06dm1B063156EVh15m6Y67pAjZZaQc89LLSrU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/themes/blue/pace-theme-minimal.css">
+  <script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous"></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"blog.jamesyuuu.me","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.2","exturl":true,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":true,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="数据备份  FS要求  FS给用户提供持久化的数据存储 文件一直要保存完好，除非用户显式删除它们  威胁一：设备损坏  磁盘块损坏 Superblock损坏：整个FS丢失 bitmap、inode table损坏：无法管理空间和inode 数据块损坏：目录、文件、间址块都无法读写   备份与恢复  物理备份与恢复：设备级  将磁盘块逐一拷贝到另一个磁盘上（备份盘） 全复制：原始盘与备份盘在物理上一">
+<meta property="og:type" content="article">
+<meta property="og:title" content="文件系统可靠性">
+<meta property="og:url" content="https://blog.jamesyuuu.me/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E5%8F%AF%E9%9D%A0%E6%80%A7/index.html">
+<meta property="og:site_name" content="JamesYu&#39;s Hut">
+<meta property="og:description" content="数据备份  FS要求  FS给用户提供持久化的数据存储 文件一直要保存完好，除非用户显式删除它们  威胁一：设备损坏  磁盘块损坏 Superblock损坏：整个FS丢失 bitmap、inode table损坏：无法管理空间和inode 数据块损坏：目录、文件、间址块都无法读写   备份与恢复  物理备份与恢复：设备级  将磁盘块逐一拷贝到另一个磁盘上（备份盘） 全复制：原始盘与备份盘在物理上一">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-12-26T12:57:00.000Z">
+<meta property="article:modified_time" content="2026-02-28T13:01:35.714Z">
+<meta property="article:author" content="JamesYu">
+<meta property="article:tag" content="笔记">
+<meta property="article:tag" content="操作系统">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://blog.jamesyuuu.me/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E5%8F%AF%E9%9D%A0%E6%80%A7/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://blog.jamesyuuu.me/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E5%8F%AF%E9%9D%A0%E6%80%A7/","path":"操作系统/文件系统可靠性/","title":"文件系统可靠性"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>文件系统可靠性 | JamesYu's Hut</title>
+  
+
+
+
+
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/gh/theme-next/theme-next-needmoreshare2@1/needsharebutton.min.css"><style>
+#needsharebutton-postbottom {
+  cursor: pointer;
+  height: 26px;
+  margin-top: 10px;
+  position: relative;
+}
+#needsharebutton-postbottom .btn {
+  border: 1px solid $btn-default-border-color;
+  border-radius: 3px;
+  display: initial;
+  padding: 1px 4px;
+}
+</style>
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css">
+<style>.darkmode--activated{--body-bg-color:#282828;--content-bg-color:#333;--card-bg-color:#555;--text-color:#ccc;--blockquote-color:#bbb;--link-color:#ccc;--link-hover-color:#eee;--brand-color:#ddd;--brand-hover-color:#ddd;--table-row-odd-bg-color:#282828;--table-row-hover-bg-color:#363636;--menu-item-bg-color:#555;--btn-default-bg:#222;--btn-default-color:#ccc;--btn-default-border-color:#555;--btn-default-hover-bg:#666;--btn-default-hover-color:#ccc;--btn-default-hover-border-color:#666;--highlight-background:#282b2e;--highlight-foreground:#a9b7c6;--highlight-gutter-background:#34393d;--highlight-gutter-foreground:#9ca9b6}.darkmode--activated img{opacity:.75}.darkmode--activated img:hover{opacity:.9}.darkmode--activated code{color:#69dbdc;background:0 0}button.darkmode-toggle{z-index:9999}.darkmode-ignore,img{display:flex!important}.beian img{display:inline-block!important}</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">JamesYu's Hut</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Game | Bangumi</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">7</span></a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">3</span></a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">36</span></a></li><li class="menu-item menu-item-观影"><a href="/movies/index.html" rel="section"><i class="fa fa-film fa-fw"></i>观影</a></li><li class="menu-item menu-item-追番"><a href="/bangumis/index.html" rel="section"><i class="fa fa-video-camera fa-fw"></i>追番</a></li><li class="menu-item menu-item-追剧"><a href="/cinemas/index.html" rel="section"><i class="fa fa-television fa-fw"></i>追剧</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD"><span class="nav-number">1.</span> <span class="nav-text">数据备份</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D"><span class="nav-number">1.1.</span> <span class="nav-text">备份与恢复</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%89%A9%E7%90%86%E5%A4%87%E4%BB%BD-vs-%E9%80%BB%E8%BE%91%E5%A4%87%E4%BB%BD"><span class="nav-number">1.1.1.</span> <span class="nav-text">物理备份 vs 逻辑备份</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%95%E6%9C%BA%E4%B8%80%E8%87%B4%E6%80%A7%E4%BF%9D%E8%AF%81"><span class="nav-number">2.</span> <span class="nav-text">宕机一致性保证</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%95%E6%9C%BA%E7%9A%84%E5%BD%B1%E5%93%8D"><span class="nav-number">2.1.</span> <span class="nav-text">宕机的影响</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%95%E6%9C%BA%E4%B8%80%E8%87%B4%E6%80%A7%E4%BF%9D%E8%AF%81-1"><span class="nav-number">2.2.</span> <span class="nav-text">宕机一致性保证</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%95%E6%9C%BA%E4%B8%80%E8%87%B4%E6%80%A7%E7%9A%84%E5%88%86%E7%B1%BB"><span class="nav-number">2.2.1.</span> <span class="nav-text">宕机一致性的分类</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%95%E6%9C%BA%E4%B8%80%E8%87%B4%E6%80%A7%E7%9A%84%E6%80%BB%E7%BB%93"><span class="nav-number">2.2.2.</span> <span class="nav-text">宕机一致性的总结</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#fsckunix-fs%E4%B8%80%E8%87%B4%E6%80%A7%E6%A3%80%E6%9F%A5%E5%B7%A5%E5%85%B7"><span class="nav-number">2.2.3.</span> <span class="nav-text">fsck：Unix FS一致性检查工具</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%8B%E5%8A%A1%E5%92%8C%E6%97%A5%E5%BF%97%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F"><span class="nav-number">3.</span> <span class="nav-text">事务和日志文件系统</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8B%E5%8A%A1%E7%9A%84%E5%BA%94%E7%94%A8-write-ahead-log%E5%86%99%E5%89%8D%E6%97%A5%E5%BF%97"><span class="nav-number">3.1.</span> <span class="nav-text">事务的应用 —— Write-Ahead
+Log（写前日志）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B7%E4%BD%93%E6%AD%A5%E9%AA%A4"><span class="nav-number">3.1.1.</span> <span class="nav-text">具体步骤</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%95%E6%9C%BA%E6%81%A2%E5%A4%8Dreplay"><span class="nav-number">3.1.2.</span> <span class="nav-text">宕机恢复（Replay）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%97%A5%E5%BF%97%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9Fjournaling-file-system"><span class="nav-number">3.2.</span> <span class="nav-text">日志文件系统（Journaling
+File System）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%97%A5%E5%BF%97%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E6%95%B0%E6%8D%AE%E6%97%A5%E5%BF%97data-journaling"><span class="nav-number">3.2.1.</span> <span class="nav-text">日志文件系统：数据日志（data
+journaling）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%97%A5%E5%BF%97%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E5%85%83%E6%95%B0%E6%8D%AE%E6%97%A5%E5%BF%97metadata-journaling"><span class="nav-number">3.2.2.</span> <span class="nav-text">日志文件系统：元数据日志（metadata
+journaling）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%97%A5%E5%BF%97%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E6%80%BB%E7%BB%93"><span class="nav-number">3.2.3.</span> <span class="nav-text">日志文件系统总结</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%97%A5%E5%BF%97%E7%BB%93%E6%9E%84%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9Flfs-log-structured-file-system"><span class="nav-number">4.</span> <span class="nav-text">日志结构文件系统（LFS
+—— Log-Structured File System）</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%BBinode"><span class="nav-number">4.1.</span> <span class="nav-text">读inode</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#imap"><span class="nav-number">4.1.1.</span> <span class="nav-text">imap</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%BB%E6%96%87%E4%BB%B6"><span class="nav-number">4.2.</span> <span class="nav-text">读文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9%E6%96%87%E4%BB%B6"><span class="nav-number">4.3.</span> <span class="nav-text">修改文件</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6"><span class="nav-number">4.3.1.</span> <span class="nav-text">垃圾回收</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%95%E6%9C%BA%E6%81%A2%E5%A4%8D"><span class="nav-number">4.4.</span> <span class="nav-text">宕机恢复</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="JamesYu"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">JamesYu</p>
+  <div class="site-description" itemprop="description">A Game and Bangumi Database For Private Use</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">36</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL0phbWVzWXV1dQ==" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;JamesYuuu"><i class="fab fa-github fa-fw"></i>GitHub</span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9pbnN0YWdyYW0uY29tL2phbWVzeXUzMg==" title="Instagram → https:&#x2F;&#x2F;instagram.com&#x2F;jamesyu32"><i class="fab fa-instagram fa-fw"></i>Instagram</span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9zcGFjZS5iaWxpYmlsaS5jb20vMTgyODA5NTQ5" title="Bilibili → https:&#x2F;&#x2F;space.bilibili.com&#x2F;182809549"><i class="fab fa-bilibili fa-fw"></i>Bilibili</span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cuemhpaHUuY29tL3Blb3BsZS95aWdlLWRhLXNodWFpLWJpLTQw" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;yige-da-shuai-bi-40"><i class="fab fa-zhihu fa-fw"></i>Zhihu</span>
+      </span>
+  </div>
+  <div class="cc-license animated" itemprop="license">
+    <span class="exturl cc-opacity" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzQuMC9kZWVkLnpo"><img src="https://cdn.jsdelivr.net/npm/@creativecommons/vocabulary@2020.11.3/assets/license_badges/small/by_nc_sa.svg" alt="Creative Commons"></span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+  <span class="exturl github-corner" data-url="aHR0cHM6Ly9naXRodWIuY29tL0phbWVzWXV1dQ==" title="在 GitHub 上关注我" aria-label="在 GitHub 上关注我"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></span>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://blog.jamesyuuu.me/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E5%8F%AF%E9%9D%A0%E6%80%A7/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="JamesYu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="JamesYu's Hut">
+      <meta itemprop="description" content="A Game and Bangumi Database For Private Use">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="文件系统可靠性 | JamesYu's Hut">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          文件系统可靠性<span class="exturl post-edit-link" data-url="aHR0cHM6Ly9naXRodWIuY29tL0phbWVzWXV1dS9IZXhvLUJsb2cvdHJlZS9tYWluL3NvdXJjZS9fcG9zdHMv5pON5L2c57O757ufL+aWh+S7tuezu+e7n+WPr+mdoOaApy5tZA==" title="编辑"><i class="fa fa-pen-nib"></i></span>
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2022-12-26 20:57:00" itemprop="dateCreated datePublished" datetime="2022-12-26T20:57:00+08:00">2022-12-26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-02-28 21:01:35" itemprop="dateModified" datetime="2026-02-28T21:01:35+08:00">2026-02-28</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Study/" itemprop="url" rel="index"><span itemprop="name">Study</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>3.8k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>14 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="数据备份">数据备份</h1>
+<ol type="1">
+<li>FS要求
+<ul>
+<li>FS给用户提供持久化的数据存储</li>
+<li>文件一直要保存完好，除非用户显式删除它们</li>
+</ul></li>
+<li>威胁一：设备损坏
+<ul>
+<li>磁盘块损坏</li>
+<li>Superblock损坏：整个FS丢失</li>
+<li>bitmap、inode table损坏：无法管理空间和inode</li>
+<li>数据块损坏：目录、文件、间址块都无法读写</li>
+</ul></li>
+</ol>
+<h2 id="备份与恢复">备份与恢复</h2>
+<ol type="1">
+<li>物理备份与恢复：设备级
+<ul>
+<li>将磁盘块逐一拷贝到另一个磁盘上（备份盘）</li>
+<li>全复制：原始盘与备份盘在物理上一模一样</li>
+<li>增量备份：只拷贝发生变化的块，与上次备份相比</li>
+<li>例如：使用<code>dd</code>进行磁盘备份</li>
+</ul></li>
+<li>逻辑备份与恢复：文件系统级
+<ul>
+<li>遍历文件系统目录树，从根目录开始</li>
+<li>把指定的目录和文件拷贝到备份磁盘</li>
+<li>在备份过程中验证文件系统结构</li>
+<li>恢复时可以将指定的文件或目录树恢复出来</li>
+<li>也有两种方式
+<ul>
+<li>全备份：备份整个文件系统</li>
+<li>增量备份：只备份发生变化的文件/目录</li>
+</ul></li>
+</ul></li>
+</ol>
+<h3 id="物理备份-vs-逻辑备份">物理备份 vs 逻辑备份</h3>
+<ol type="1">
+<li>物理备份
+<ul>
+<li>忽略文件和文件系统结构，处理过程简洁，备份性能高</li>
+<li>文件修改时只用备份修改的数据块，不用备份整个文件</li>
+<li>不受文件系统限制</li>
+</ul></li>
+<li>逻辑备份
+<ul>
+<li>备份文件时，文件块可能分散在磁盘上，备份性能受影响</li>
+<li>文件修改时需要备份整个文件</li>
+<li>受文件系统限制，按文件粒度备份，保证完整性</li>
+</ul></li>
+</ol>
+<h1 id="宕机一致性保证">宕机一致性保证</h1>
+<ol type="1">
+<li>威胁二：宕机或掉电
+<ul>
+<li>硬件掉电</li>
+<li>软件bugs导致宕机：驱动或文件系统bug</li>
+<li>导致文件缓存中的脏数据没有写回磁盘：目录块、inode
+、间址块、数据块</li>
+</ul></li>
+<li>挑战
+<ul>
+<li>宕机可能发生在任意时刻</li>
+<li>在性能与可靠性之间进行取舍
+<ul>
+<li>宕机使得内存中的数据全部丢失</li>
+<li>缓存越多的数据 -&gt; 性能越好</li>
+<li>缓存越多的数据 -&gt; 宕机时丢失的数据越多</li>
+</ul></li>
+<li>一个文件写操作往往修改多个块
+<ul>
+<li>磁盘只能保证原子写一个扇区</li>
+<li>如何保证修改多个块的原子性？</li>
+</ul></li>
+</ul></li>
+</ol>
+<h2 id="宕机的影响">宕机的影响</h2>
+<ol type="1">
+<li>创建文件：在当前目录 /home/xj 下创建文件 testfile
+<ul>
+<li>需写回4个块，在磁盘不同位置
+<ul>
+<li>inode bitmap</li>
+<li>文件inode</li>
+<li>目录块：含目录项&lt;"testfile", ino&gt;</li>
+<li>目录inode：修改size，mtime等</li>
+</ul></li>
+<li>宕机时，没有全部写回 -&gt; FS不一致
+<ul>
+<li>写回顺序可能是任意的</li>
+<li>目录块没写回：有inode，没目录项</li>
+<li>文件inode没写回：有目录项，没inode</li>
+</ul></li>
+</ul></li>
+<li>写文件：在 /home/xj/testfile 末尾写入一个数据块（Append）
+<ul>
+<li>需写回3个块，在磁盘的不同位置
+<ul>
+<li>文件inode：修改size，mtime等</li>
+<li>data-block bitmap</li>
+<li>数据块本身</li>
+</ul></li>
+<li>宕机时，没有全部写回 -&gt; FS不一致 &amp; 数据与元数据不一致
+<ul>
+<li>写回顺序可能是任意的</li>
+<li>FS不一致：文件inode 和 data-block bitmap 中有一个没写回</li>
+<li>数据与元数据不一致：文件inode 和 数据块没有都写回</li>
+</ul></li>
+</ul></li>
+<li>写回方案一：先写元数据、后写数据（同上例）
+<ul>
+<li>路径解析"/home/xj/testfile" || 宕机 -&gt; 数据与元数据一致</li>
+<li>分配数据块，写bitmap || 宕机 -&gt;
+数据与元数据一致（FS不一致，有垃圾块）</li>
+<li>写inode（直接指针、大小等） || 宕机 -&gt; 数据与元数据不一致</li>
+<li>写数据块 || 宕机 -&gt; 数据与元数据一致</li>
+</ul></li>
+</ol>
+<blockquote>
+<p>先写元数据，宕机后可能出现数据与元数据不一致</p>
+</blockquote>
+<ol start="4" type="1">
+<li>写回方案二：先写数据、后写元数据（同上例）
+<ul>
+<li>路径解析"/home/xj/testfile" || 宕机 -&gt; 数据与元数据一致</li>
+<li>分配数据块，写bitmap || 宕机 -&gt;
+数据与元数据一致（FS不一致，有垃圾块）</li>
+<li>写数据块 || 宕机 -&gt; 数据与元数据一致</li>
+<li>写inode（直接指针、大小等） || 宕机 -&gt; 数据与元数据一致</li>
+</ul></li>
+</ol>
+<blockquote>
+<p>先写数据，宕机后可能i-node指向旧版本，但数据与元数据是一致的</p>
+</blockquote>
+<h2 id="宕机一致性保证-1">宕机一致性保证</h2>
+<h3 id="宕机一致性的分类">宕机一致性的分类</h3>
+<ol type="1">
+<li>FS一致性
+<ul>
+<li>文件系统自身的数据结构（称为FS元数据）一致
+<ul>
+<li>Superblock,bitmap(inode和data)，inode，目录项</li>
+<li>可能导致FS不一致：修改多个元数据的操作
+<ul>
+<li>创建/删除文件、创建/删除目录、重命名、硬链接、符号链接、...</li>
+<li>写文件</li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li>数据与元数据一致性
+<ul>
+<li>文件元数据（inode和间址块）和文件块一致</li>
+<li>数据与元数据不一致：写文件</li>
+</ul></li>
+<li>数据一致性
+<ul>
+<li>一次写多个数据块</li>
+<li>数据不一致：写文件</li>
+</ul></li>
+<li>宕机一致性保证
+<ul>
+<li>一个操作包含多个修改：要么全部写到磁盘，要么都没写到磁盘</li>
+</ul></li>
+</ol>
+<h3 id="宕机一致性的总结">宕机一致性的总结</h3>
+<ol type="1">
+<li>通用方法：按自底向上顺序进行修改（Ordered Write）
+<ul>
+<li>文件的数据块 -&gt; 文件的inode -&gt; 目录的数据块 -&gt; 目录的inode
+<ul>
+<li>写回所有的数据块（有文件缓存）</li>
+<li>修改文件的inode，并把它写回磁盘</li>
+<li>修改目录块（目录项），并把它写回磁盘</li>
+<li>修改目录的inode，并把它写回磁盘</li>
+<li>沿路径向上，直到无修改的目录</li>
+</ul></li>
+</ul></li>
+<li>不足
+<ul>
+<li>宕机后仍然可能产生垃圾块（FS不一致），也可能有目录和文件不一致（文件修改了，目录没有改）</li>
+<li>FS不一致可以通过运行一致性检查工具（例如fsck）清理垃圾块</li>
+</ul></li>
+<li>理想情况
+<ul>
+<li>保证一致性的修改，而且不留下垃圾块</li>
+<li>三个一致性保证</li>
+</ul></li>
+</ol>
+<h3 id="fsckunix-fs一致性检查工具">fsck：Unix FS一致性检查工具</h3>
+<ol type="1">
+<li>检查并试图恢复FS的一致性
+<ul>
+<li>不能解决所有问题，比如数据与元数据不一致</li>
+</ul></li>
+<li>检查Superblock
+<ul>
+<li>如果fs size &lt; 已分配块，认为它损坏，切换到另一个 Superblock
+副本</li>
+</ul></li>
+<li>检查块位图
+<ul>
+<li>重构已使用块信息：扫描磁盘上所有的 inode 和间址块</li>
+</ul></li>
+<li>检查 inode 位图
+<ul>
+<li>重构已使用 inode 信息：扫描磁盘上所有目录的目录项</li>
+</ul></li>
+<li>检查 inode
+<ul>
+<li>通过 type 域的值（普通文件，目录，符号链接）来判断 inode
+是否损坏</li>
+<li>如果损坏，则清除该 inode 及它对应的 bitmap 位</li>
+</ul></li>
+<li>检查 nlink 域
+<ul>
+<li>遍历 FS
+的整个目录树，重新计算每个文件的链接数（即指向它的目录项个数）</li>
+<li>没有目录项指向的 inode ，放到 lost+found 目录下</li>
+</ul></li>
+<li>检查数据块冲突
+<ul>
+<li>是否有两个(或更多)的 inode 指向同一数据块</li>
+<li>如果有 inode 损坏，则清理 inode，否则把该数据块复制一份</li>
+</ul></li>
+<li>检查数据块指针
+<ul>
+<li>指针是否越界(&gt; 磁盘分区大小)</li>
+<li>删除该指针</li>
+</ul></li>
+<li>不足
+<ul>
+<li>恢复时间与 FS 大小成正比
+<ul>
+<li>即使只修复几个块，也需要扫描整个磁盘和遍历 FS 目录树</li>
+<li>会导致丢数据：inode 损坏、数据块或间址块损坏</li>
+</ul></li>
+</ul></li>
+</ol>
+<h1 id="事务和日志文件系统">事务和日志文件系统</h1>
+<blockquote>
+<p>事务：一组操作，需要具有原子性 ——
+要么所有操作都成功完成，要么一个操作也不曾执行过</p>
+</blockquote>
+<h2 id="事务的应用-write-ahead-log写前日志">事务的应用 —— Write-Ahead
+Log（写前日志）</h2>
+<ol type="1">
+<li>写前日志
+<ul>
+<li>在实际进行写操作前，先把写操作记日志</li>
+<li>记录日志时使用事务</li>
+</ul></li>
+<li>前提
+<ul>
+<li>日志中记录的所有修改必须是幂等的</li>
+<li>每个事务有唯一的编号 TID</li>
+<li>必须有办法确认写磁盘完成
+<ul>
+<li>TxB 和 日志记录可以同时发给磁盘，TxE最后发送，使用 Write
+Barrier</li>
+<li>使用 fsync 保证写盘完成</li>
+</ul></li>
+</ul></li>
+</ol>
+<h3 id="具体步骤">具体步骤</h3>
+<ol type="1">
+<li>Begin Transaction（开始事务）
+<ul>
+<li>开始一条日志项，写一个日志开始标记 TxB，标明一个事务开始</li>
+</ul></li>
+<li>事务中的修改
+<ul>
+<li>所有修改都写日志</li>
+<li>事务日志中需要标明事务编号 TID</li>
+</ul></li>
+<li>Commit（提交事务）
+<ul>
+<li>写一个日志结束标记 TxE，标明一个事务成功完成</li>
+</ul></li>
+<li>Checkpoint（检查点）
+<ul>
+<li>Commit 之后，把该事务中的修改全部写到磁盘上</li>
+</ul></li>
+<li>清除日志
+<ul>
+<li>Checkpoint 写完后，清除相应的日志项</li>
+</ul></li>
+</ol>
+<h3 id="宕机恢复replay">宕机恢复（Replay）</h3>
+<ol type="1">
+<li>宕机后扫描写前日志中的日志项，对于每条日志项
+<ul>
+<li>如果磁盘上只有日志开始标记 TxB，没有结束日志 TxE，则什么也不做</li>
+<li>如果日志项是完整的（同时有 TxB 和 TxE），则按日志重做（Redo
+Log），然后再清除日志</li>
+</ul></li>
+<li>前提假设
+<ul>
+<li>写到磁盘上的日志数据都是正确的</li>
+<li>宕机后没有磁盘损坏</li>
+</ul></li>
+</ol>
+<h2 id="日志文件系统journaling-file-system">日志文件系统（Journaling
+File System）</h2>
+<ol type="1">
+<li><p>用写前日志来记录所有写操作</p>
+<ul>
+<li>创建/删除文件、创建/删除目录、重命名、硬链接、符号链接...</li>
+<li>写文件</li>
+</ul></li>
+<li><p>第一个日志文件系统：Cedar FS[1987]</p></li>
+<li><p>很多商用文件系统都使用写前日志：NTFS、JFS、XFS、Linux
+ex2/3/4...</p></li>
+<li><p>宕机恢复</p>
+<ul>
+<li>按日志重做一遍</li>
+<li>简单、高效
+<ul>
+<li>恢复时间与日志大小成正比</li>
+</ul></li>
+<li>日志必须是等幂的</li>
+</ul></li>
+</ol>
+<h3
+id="日志文件系统数据日志data-journaling">日志文件系统：数据日志（data
+journaling）</h3>
+<ol type="1">
+<li>记录所有修改的日志：数据 &amp; 元数据</li>
+<li>例如：在一个文件末尾追加一个数据块
+<ul>
+<li>修改文件的inode，修改bitmap，写数据块</li>
+</ul></li>
+<li>流程
+<ul>
+<li>写日志：TxB、inode日志、bitmap日志、数据块日志</li>
+<li>提交日志 commit：写 TxE</li>
+<li>Checkpoint：实际修改磁盘上的inode、bitmap、数据块</li>
+<li>清除日志</li>
+</ul></li>
+<li>日志开销
+<ul>
+<li>所有数据块写两次磁盘</li>
+</ul></li>
+</ol>
+<h3
+id="日志文件系统元数据日志metadata-journaling">日志文件系统：元数据日志（metadata
+journaling）</h3>
+<ol type="1">
+<li>只记录元数据的修改的日志</li>
+<li>例如：在一个文件末尾追加一个数据块
+<ul>
+<li>修改文件的inode，修改bitmap，写数据块</li>
+</ul></li>
+<li>流程
+<ul>
+<li>写数据块</li>
+<li>写日志：TxB、inode日志、bitmap日志</li>
+<li>提交日志 commit：写 TxE</li>
+<li>Checkpoint：实际修改磁盘上的inode、bitmap</li>
+<li>清除日志</li>
+</ul></li>
+<li>日志开销
+<ul>
+<li>只有元数据写两次磁盘，所有数据块只写一次磁盘</li>
+</ul></li>
+</ol>
+<h3 id="日志文件系统总结">日志文件系统总结</h3>
+<ol type="1">
+<li>性能问题
+<ul>
+<li>增加额外的写磁盘开销：每个日志都要同步写磁盘（fsync）</li>
+<li>写放大
+<ul>
+<li>即使只修改一个块中少量内容（十几字节），也需要写日志</li>
+<li>Bitmap中一个bit修改，也要对bitmap block写日志</li>
+</ul></li>
+</ul></li>
+<li>改进办法
+<ul>
+<li>批量写日志：以牺牲可靠性换取性能
+<ul>
+<li>宕机仍然可能丢数据，但不会损坏FS一致性</li>
+<li>例如，再同一个目录下创建和写入多个文件</li>
+</ul></li>
+<li>用 NVRAM 来保存日志，实现快速同步写</li>
+</ul></li>
+<li>可靠性
+<ul>
+<li>无法应对硬件故障，比如磁盘扇区坏</li>
+</ul></li>
+<li>日志管理
+<ul>
+<li>需要多大的日志？
+<ul>
+<li>日志只在宕机恢复时需要</li>
+<li>日志过小，很快占满日志空间，无法接受新日志</li>
+<li>日志过大，导致恢复时间长</li>
+</ul></li>
+<li>方法
+<ul>
+<li>顺序地、Append-only 写，循环使用日志空间（Circular Log）</li>
+<li>定期做 checkpoint ：把缓存里的修改内容刷回磁盘</li>
+<li>checkpoint 之后，可以释放日志所占空间</li>
+</ul></li>
+</ul></li>
+</ol>
+<h1
+id="日志结构文件系统lfs-log-structured-file-system">日志结构文件系统（LFS
+—— Log-Structured File System）</h1>
+<ol type="1">
+<li>思想
+<ul>
+<li>想写日志那样顺序地写磁盘</li>
+</ul></li>
+<li>具体机制
+<ul>
+<li>每次写文件块写到新位置（日志末尾）：out-of-place update（vs in-place
+update）</li>
+<li>不需要 bitmap 来管理空闲空间</li>
+<li>文件块采用多级索引（同FFS）：文件块位置记录在 inode中</li>
+<li>每次写文件采用一致性修改：先写文件块，再写inode</li>
+</ul></li>
+<li>大粒度顺序写
+<ul>
+<li>起因：小粒度写不能发挥磁盘带宽</li>
+<li>Segment：大粒度的内存 buffer
+<ul>
+<li>缓存多个写，一次把整个 Segment 写回磁盘</li>
+<li>写回时仍然遵循 先写文件块，再写inode 的原则</li>
+</ul></li>
+</ul></li>
+</ol>
+<h2 id="读inode">读inode</h2>
+<ol type="1">
+<li>UFS 和 FFS
+<ul>
+<li>通过ino来计算出inode的位置</li>
+</ul></li>
+<li>LFS
+<ul>
+<li>每次写文件块，都要写 inode</li>
+<li>每次会写到新的位置，即一个文件的 inode 在磁盘没有固定位置</li>
+</ul></li>
+</ol>
+<h3 id="imap">imap</h3>
+<ol type="1">
+<li>记录 ino-&gt;inode 磁盘地址，只记录最新的inode地址</li>
+<li>怎么存
+<ul>
+<li>磁盘上的固定位置</li>
+<li>每次写文件，都要修改 imap</li>
+<li>写日志与写imap需要长距离寻道，性能比 FFS 还差</li>
+</ul></li>
+<li>LFS的改进方法
+<ul>
+<li>imap块随文件块和i-node一起写到日志中</li>
+<li>CR(Change Region)：记录每个imap块的最新磁盘地址</li>
+<li>CR位于磁盘上固定位置：有两个CR，分别位于磁盘的头和尾</li>
+</ul></li>
+</ol>
+<blockquote>
+<p>关于目录：目录采用与文件一样的方式来写</p>
+</blockquote>
+<h2 id="读文件">读文件</h2>
+<ol type="1">
+<li>假设 LFS 刚挂载，内存里什么也没有
+<ul>
+<li>先读 CR，把 CR 缓存在内存，以后就不用读了</li>
+<li>根据 ino ，知道它所在的磁盘块</li>
+<li>查 CR 得到 imp 块的磁盘地址</li>
+<li>读 imap 块，得到 ino 对应的 inode 的磁盘地址</li>
+<li>读 inode，查文件块索引，得到文件块的磁盘地址</li>
+<li>读文件块</li>
+</ul></li>
+</ol>
+<h2 id="修改文件">修改文件</h2>
+<ol type="1">
+<li>修改 /home/os/foo 的第一块
+<ul>
+<li>原来的数据块变为无效 -&gt; 垃圾</li>
+</ul></li>
+<li>在 /home/os/foo 末尾追加写一块
+<ul>
+<li>原来的inode变为无效 -&gt; 垃圾</li>
+</ul></li>
+</ol>
+<h3 id="垃圾回收">垃圾回收</h3>
+<ol type="1">
+<li>原理
+<ul>
+<li>后台进程cleaner周期性地检查一定数量的segment</li>
+<li>把每个segment中的活块拷贝到新的segment中
+<ul>
+<li>如何判断活块？
+<ul>
+<li>segment summary block
+<ul>
+<li>记录每个数据块的ino和文件内偏移</li>
+<li>位于 segment 的头部</li>
+</ul></li>
+<li>通过查segment summary block、imap和文件索引可以得到当前块的地址</li>
+</ul></li>
+</ul></li>
+<li>M个segment的活块占据N个新的segment</li>
+</ul></li>
+<li>何时回收
+<ul>
+<li>周期性回收</li>
+<li>空闲时：无访问或访问少</li>
+<li>磁盘快满的时候</li>
+</ul></li>
+<li>回收什么样的segment
+<ul>
+<li>热segment：块频繁被重写</li>
+<li>冷segment：部分死块、部分稳定块（不重写）</li>
+<li>优先回收冷segment，推迟回收热segment（直至该segment里的数据块都被重写过）</li>
+</ul></li>
+</ol>
+<h2 id="宕机恢复">宕机恢复</h2>
+<ol type="1">
+<li>LFS的最新修改在日志末尾</li>
+<li>CR记录第一个 segment 和最后一个 segment 的磁盘地址
+<ul>
+<li>每个segment指向下一个segment</li>
+</ul></li>
+<li>CR更新
+<ul>
+<li>写CR的第一个块，带时间戳</li>
+<li>写CR本身内容</li>
+<li>写CR最后一个块，带时间戳</li>
+<li>周期性地将CR刷盘（30s）</li>
+<li>两个CR（磁盘头和尾）交替写，减少CR更新时宕机的影响</li>
+</ul></li>
+<li>CR一致性保证
+<ul>
+<li>第一个块和最后一个块的时间戳一致</li>
+</ul></li>
+<li>恢复方式
+<ul>
+<li>使用最后一次且一致的 Checkpoint Region
+<ul>
+<li>时间戳最新的 &amp; 完整的CR</li>
+<li>可以获得最后一次 Checkpoint 时的 CR 内容，包括 imap
+等数据结构的地址</li>
+</ul></li>
+<li>CR 周期性刷盘，此时 CR 内容可能已过时，即最后一次 Checkpoint
+后的磁盘写没有被恢复</li>
+<li>恢复优化（回滚）
+<ul>
+<li>使用最后一次修改的 CR（不一定是一致的）重构最新的文件修改
+<ul>
+<li>根据 CR 找到日志末尾（有记录），检查后续写的 segment</li>
+<li>将其中有效的更新恢复到文件系统，例如，将 segment summary block
+中记录的 inode 更新到 imap 中</li>
+</ul></li>
+</ul></li>
+<li>恢复快
+<ul>
+<li>无需fsck，无需扫描磁盘</li>
+<li>秒级 vs 小时级</li>
+</ul></li>
+</ul></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div class="post-widgets">
+      <div id="needsharebutton-postbottom">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    </div>
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>JamesYu
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="https://blog.jamesyuuu.me/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E5%8F%AF%E9%9D%A0%E6%80%A7/" title="文件系统可靠性">https://blog.jamesyuuu.me/操作系统/文件系统可靠性/</a>
+  </li>
+  <li class="post-copyright-license">
+      <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzQuMC9kZWVkLnpo"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</span> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E7%AC%94%E8%AE%B0/" rel="tag"><i class="fa fa-tag"></i> 笔记</a>
+              <a href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag"><i class="fa fa-tag"></i> 操作系统</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E5%AE%9E%E7%8E%B0/" rel="prev" title="文件系统实现">
+                  <i class="fa fa-angle-left"></i> 文件系统实现
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/WAFL%E4%B8%8E%E7%B3%BB%E7%BB%9F%E5%AE%89%E5%85%A8/" rel="next" title="WAFL与系统安全">
+                  WAFL与系统安全 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments" id="lv-container" data-id="city" data-uid="MTAyMC81NTk2Mi8zMjQyNQ"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 2022 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">JamesYu</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">64k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">3:52</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <span class="exturl" data-url="aHR0cHM6Ly9oZXhvLmlv">Hexo</span> & <span class="exturl" data-url="aHR0cHM6Ly90aGVtZS1uZXh0LmpzLm9yZw==">NexT.Gemini</span> 强力驱动
+  </div>
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/gh/stevenjoezhang/live2d-widget@latest/autoload.js"></script>
+  </footer>
+
+  
+  <script size="300" alpha="0.6" zIndex="-1" src="https://cdn.jsdelivr.net/npm/ribbon.js@1.0.2/dist/ribbon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script><script src="/js/bookmark.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.2.12/pdfobject.min.js","integrity":"sha256-g2xji1rlE3KsGVClvuxTbcR0Kn2+wtQADSff2Tbb4zA="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@10.5.0/dist/mermaid.min.js","integrity":"sha256-K7oJiQlDulzl24ZUFOywuYme1JqBBvQzK6m8qHjt9Gk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+
+
+  <script src="/js/third-party/pace.js"></script>
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/darkmode-js@1.5.7/lib/darkmode-js.min.js"></script>
+
+<script>
+var options = {
+  bottom: '64px',
+  right: '32px',
+  left: 'unset',
+  time: '0.5s',
+  mixColor: 'transparent',
+  backgroundColor: 'transparent',
+  buttonColorDark: '#100f2c',
+  buttonColorLight: '#fff',
+  saveInCookies: true,
+  label: '🌓',
+  autoMatchOsTheme: true
+}
+const darkmode = new Darkmode(options);
+window.darkmode = darkmode;
+darkmode.showWidget();
+</script>
+
+  <script src="//cdn.jsdelivr.net/gh/theme-next/theme-next-needmoreshare2@1/needsharebutton.min.js"></script>
+  <script>
+      pbOptions = {};
+        pbOptions.iconStyle = "box";
+        pbOptions.boxForm = "horizontal";
+        pbOptions.position = "bottomCenter";
+        pbOptions.networks = "Weibo,Wechat,Douban,QQZone,Twitter,Facebook";
+      new needShareButton('#needsharebutton-postbottom', pbOptions);
+  </script><script src="/js/third-party/comments/livere.js"></script>
+
+</body>
+</html>

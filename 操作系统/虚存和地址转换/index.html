@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="baidu-site-verification" content="PTwOehQpzZ">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.2/css/all.min.css" integrity="sha256-CTSx/A06dm1B063156EVh15m6Y67pAjZZaQc89LLSrU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/themes/blue/pace-theme-minimal.css">
+  <script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous"></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"blog.jamesyuuu.me","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.2","exturl":true,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":true,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="计算机存储体系结构  冯·诺依曼结构 层次化存储结构  内存DRAM：快、容量小、易丢失、昂贵 外存磁盘：慢、容量大、不易丢失、便宜   需求一：进程保护  一个进程出错不能影响到其他进程 需要对每个内存访问都进行检查，保证内存访问都合法  需求二：扩展内存和应用透明  一个进程必须能运行再不同的物理内存区域上 一个进程必须能运行在不同的物理内存大小上  问题：如何高效地使用内存空间？  目标1：">
+<meta property="og:type" content="article">
+<meta property="og:title" content="虚存和地址转换">
+<meta property="og:url" content="https://blog.jamesyuuu.me/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E8%99%9A%E5%AD%98%E5%92%8C%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2/index.html">
+<meta property="og:site_name" content="JamesYu&#39;s Hut">
+<meta property="og:description" content="计算机存储体系结构  冯·诺依曼结构 层次化存储结构  内存DRAM：快、容量小、易丢失、昂贵 外存磁盘：慢、容量大、不易丢失、便宜   需求一：进程保护  一个进程出错不能影响到其他进程 需要对每个内存访问都进行检查，保证内存访问都合法  需求二：扩展内存和应用透明  一个进程必须能运行再不同的物理内存区域上 一个进程必须能运行在不同的物理内存大小上  问题：如何高效地使用内存空间？  目标1：">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-12-24T03:47:00.000Z">
+<meta property="article:modified_time" content="2026-02-28T13:01:35.714Z">
+<meta property="article:author" content="JamesYu">
+<meta property="article:tag" content="笔记">
+<meta property="article:tag" content="操作系统">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://blog.jamesyuuu.me/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E8%99%9A%E5%AD%98%E5%92%8C%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://blog.jamesyuuu.me/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E8%99%9A%E5%AD%98%E5%92%8C%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2/","path":"操作系统/虚存和地址转换/","title":"虚存和地址转换"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>虚存和地址转换 | JamesYu's Hut</title>
+  
+
+
+
+
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/gh/theme-next/theme-next-needmoreshare2@1/needsharebutton.min.css"><style>
+#needsharebutton-postbottom {
+  cursor: pointer;
+  height: 26px;
+  margin-top: 10px;
+  position: relative;
+}
+#needsharebutton-postbottom .btn {
+  border: 1px solid $btn-default-border-color;
+  border-radius: 3px;
+  display: initial;
+  padding: 1px 4px;
+}
+</style>
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css">
+<style>.darkmode--activated{--body-bg-color:#282828;--content-bg-color:#333;--card-bg-color:#555;--text-color:#ccc;--blockquote-color:#bbb;--link-color:#ccc;--link-hover-color:#eee;--brand-color:#ddd;--brand-hover-color:#ddd;--table-row-odd-bg-color:#282828;--table-row-hover-bg-color:#363636;--menu-item-bg-color:#555;--btn-default-bg:#222;--btn-default-color:#ccc;--btn-default-border-color:#555;--btn-default-hover-bg:#666;--btn-default-hover-color:#ccc;--btn-default-hover-border-color:#666;--highlight-background:#282b2e;--highlight-foreground:#a9b7c6;--highlight-gutter-background:#34393d;--highlight-gutter-foreground:#9ca9b6}.darkmode--activated img{opacity:.75}.darkmode--activated img:hover{opacity:.9}.darkmode--activated code{color:#69dbdc;background:0 0}button.darkmode-toggle{z-index:9999}.darkmode-ignore,img{display:flex!important}.beian img{display:inline-block!important}</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">JamesYu's Hut</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Game | Bangumi</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">7</span></a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">3</span></a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">36</span></a></li><li class="menu-item menu-item-观影"><a href="/movies/index.html" rel="section"><i class="fa fa-film fa-fw"></i>观影</a></li><li class="menu-item menu-item-追番"><a href="/bangumis/index.html" rel="section"><i class="fa fa-video-camera fa-fw"></i>追番</a></li><li class="menu-item menu-item-追剧"><a href="/cinemas/index.html" rel="section"><i class="fa fa-television fa-fw"></i>追剧</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%AD%98%E5%82%A8%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84"><span class="nav-number">1.</span> <span class="nav-text">计算机存储体系结构</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%9C%80%E6%B1%82%E4%B8%80%E8%BF%9B%E7%A8%8B%E4%BF%9D%E6%8A%A4"><span class="nav-number">1.1.</span> <span class="nav-text">需求一：进程保护</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%9C%80%E6%B1%82%E4%BA%8C%E6%89%A9%E5%B1%95%E5%86%85%E5%AD%98%E5%92%8C%E5%BA%94%E7%94%A8%E9%80%8F%E6%98%8E"><span class="nav-number">1.2.</span> <span class="nav-text">需求二：扩展内存和应用透明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E5%A6%82%E4%BD%95%E9%AB%98%E6%95%88%E5%9C%B0%E4%BD%BF%E7%94%A8%E5%86%85%E5%AD%98%E7%A9%BA%E9%97%B4"><span class="nav-number">1.3.</span> <span class="nav-text">问题：如何高效地使用内存空间？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98"><span class="nav-number">1.4.</span> <span class="nav-text">解决方案：虚拟内存</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98"><span class="nav-number">2.</span> <span class="nav-text">虚拟内存</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9C%B0%E5%9D%80%E7%A9%BA%E9%97%B4"><span class="nav-number">2.1.</span> <span class="nav-text">地址空间</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%99%9A%E5%AD%98%E7%9A%84%E5%A5%BD%E5%A4%84"><span class="nav-number">2.2.</span> <span class="nav-text">虚存的好处</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9C%B0%E5%9D%80%E6%98%A0%E5%B0%84"><span class="nav-number">3.</span> <span class="nav-text">地址映射</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87"><span class="nav-number">3.1.</span> <span class="nav-text">目标</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9C%B0%E5%9D%80%E6%98%A0%E5%B0%84%E5%92%8C%E7%B2%92%E5%BA%A6"><span class="nav-number">3.2.</span> <span class="nav-text">地址映射和粒度</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E5%9D%80-%E9%95%BF%E5%BA%A6cray-1%E4%B8%AD%E9%87%87%E7%94%A8%E7%9A%84%E6%96%B9%E6%B3%95"><span class="nav-number">3.3.</span> <span class="nav-text">基址 +
+长度（Cray-1中采用的方法）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%86%E6%AE%B5"><span class="nav-number">3.4.</span> <span class="nav-text">分段</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%99%9A%E5%AE%9E%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E8%BF%87%E7%A8%8B"><span class="nav-number">3.4.1.</span> <span class="nav-text">虚实地址转换过程</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%86%E9%A1%B5"><span class="nav-number">3.5.</span> <span class="nav-text">分页</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A1%B5%E8%A1%A8%E9%A1%B9"><span class="nav-number">3.5.1.</span> <span class="nav-text">页表项</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%86%E6%AE%B5-%E5%88%86%E9%A1%B5"><span class="nav-number">3.6.</span> <span class="nav-text">分段 + 分页</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%9A%E7%BA%A7%E9%A1%B5%E8%A1%A8"><span class="nav-number">3.7.</span> <span class="nav-text">多级页表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%8D%E5%90%91%E9%A1%B5%E8%A1%A8"><span class="nav-number">3.8.</span> <span class="nav-text">反向页表</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#mmu-%E5%92%8C-tlb"><span class="nav-number">4.</span> <span class="nav-text">MMU 和 TLB</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E5%AE%9E%E7%8E%B0"><span class="nav-number">4.1.</span> <span class="nav-text">地址转换实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8A%A0%E9%80%9F%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2"><span class="nav-number">4.2.</span> <span class="nav-text">加速地址转换</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#tlbtranslation-look-aside-buffer%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E6%97%81%E8%B7%AF%E7%BC%93%E5%86%B2"><span class="nav-number">4.3.</span> <span class="nav-text">TLB（Translation
+Look-aside Buffer，地址转换旁路缓冲）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#tlb%E5%85%B7%E4%BD%93%E6%B5%81%E7%A8%8B%E7%A1%AC%E4%BB%B6%E5%92%8C%E8%BD%AF%E4%BB%B6%E4%B8%8D%E5%90%8C"><span class="nav-number">4.3.1.</span> <span class="nav-text">TLB具体流程（硬件和软件不同）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A1%AC%E4%BB%B6%E6%8E%A7%E5%88%B6-vs-%E8%BD%AF%E4%BB%B6%E6%8E%A7%E5%88%B6"><span class="nav-number">4.3.2.</span> <span class="nav-text">硬件控制 vs 软件控制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#tlb-%E8%AE%BE%E8%AE%A1%E9%97%AE%E9%A2%98"><span class="nav-number">4.3.3.</span> <span class="nav-text">TLB 设计问题</span></a></li></ol></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="JamesYu"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">JamesYu</p>
+  <div class="site-description" itemprop="description">A Game and Bangumi Database For Private Use</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">36</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL0phbWVzWXV1dQ==" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;JamesYuuu"><i class="fab fa-github fa-fw"></i>GitHub</span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9pbnN0YWdyYW0uY29tL2phbWVzeXUzMg==" title="Instagram → https:&#x2F;&#x2F;instagram.com&#x2F;jamesyu32"><i class="fab fa-instagram fa-fw"></i>Instagram</span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9zcGFjZS5iaWxpYmlsaS5jb20vMTgyODA5NTQ5" title="Bilibili → https:&#x2F;&#x2F;space.bilibili.com&#x2F;182809549"><i class="fab fa-bilibili fa-fw"></i>Bilibili</span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cuemhpaHUuY29tL3Blb3BsZS95aWdlLWRhLXNodWFpLWJpLTQw" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;yige-da-shuai-bi-40"><i class="fab fa-zhihu fa-fw"></i>Zhihu</span>
+      </span>
+  </div>
+  <div class="cc-license animated" itemprop="license">
+    <span class="exturl cc-opacity" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzQuMC9kZWVkLnpo"><img src="https://cdn.jsdelivr.net/npm/@creativecommons/vocabulary@2020.11.3/assets/license_badges/small/by_nc_sa.svg" alt="Creative Commons"></span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+  <span class="exturl github-corner" data-url="aHR0cHM6Ly9naXRodWIuY29tL0phbWVzWXV1dQ==" title="在 GitHub 上关注我" aria-label="在 GitHub 上关注我"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></span>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://blog.jamesyuuu.me/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E8%99%9A%E5%AD%98%E5%92%8C%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="JamesYu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="JamesYu's Hut">
+      <meta itemprop="description" content="A Game and Bangumi Database For Private Use">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="虚存和地址转换 | JamesYu's Hut">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          虚存和地址转换<span class="exturl post-edit-link" data-url="aHR0cHM6Ly9naXRodWIuY29tL0phbWVzWXV1dS9IZXhvLUJsb2cvdHJlZS9tYWluL3NvdXJjZS9fcG9zdHMv5pON5L2c57O757ufL+iZmuWtmOWSjOWcsOWdgOi9rOaNoi5tZA==" title="编辑"><i class="fa fa-pen-nib"></i></span>
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2022-12-24 11:47:00" itemprop="dateCreated datePublished" datetime="2022-12-24T11:47:00+08:00">2022-12-24</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-02-28 21:01:35" itemprop="dateModified" datetime="2026-02-28T21:01:35+08:00">2026-02-28</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Study/" itemprop="url" rel="index"><span itemprop="name">Study</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>2.8k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>10 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="计算机存储体系结构">计算机存储体系结构</h1>
+<ol type="1">
+<li><p>冯·诺依曼结构</p></li>
+<li><p>层次化存储结构</p>
+<ul>
+<li>内存DRAM：快、容量小、易丢失、昂贵</li>
+<li>外存磁盘：慢、容量大、不易丢失、便宜</li>
+</ul></li>
+</ol>
+<h2 id="需求一进程保护">需求一：进程保护</h2>
+<ol type="1">
+<li>一个进程出错不能影响到其他进程</li>
+<li>需要对每个内存访问都进行检查，保证内存访问都合法</li>
+</ol>
+<h2 id="需求二扩展内存和应用透明">需求二：扩展内存和应用透明</h2>
+<ol type="1">
+<li>一个进程必须能运行再不同的物理内存区域上</li>
+<li>一个进程必须能运行在不同的物理内存大小上</li>
+</ol>
+<h2 id="问题如何高效地使用内存空间">问题：如何高效地使用内存空间？</h2>
+<ol type="1">
+<li>目标1：同时运行多个进程
+<ul>
+<li>系统能够运行的进程越多越好</li>
+</ul></li>
+<li>目标2：地址空间足够大
+<ul>
+<li>一个大进程，其大小超过物理内存</li>
+<li>多个小进程，其大小总和超过物理内存</li>
+</ul></li>
+<li>目标3：保护
+<ul>
+<li>一个用户进程不能读取和修改其他用户进程的内存</li>
+<li>用户进程不能破坏内核使用的内存空间</li>
+</ul></li>
+</ol>
+<h2 id="解决方案虚拟内存">解决方案：虚拟内存</h2>
+<ol type="1">
+<li>基本内存抽象
+<ul>
+<li>地址空间：进程的内存视图 -&gt; 虚拟内存</li>
+<li>透明使用、高效访问、安全保护</li>
+</ul></li>
+<li>虚拟内存 vs 虚拟CPU
+<ul>
+<li>虚拟CPU
+<ul>
+<li>进程不与CPU绑定，可以迁移到任一CPU</li>
+<li>进程执行时，自以为独占了CPU</li>
+<li>进程CPU状态与切换：通过上下文</li>
+</ul></li>
+<li>虚拟内存
+<ul>
+<li>进程数据不与物理内存绑定，可以迁移到任意的内存/磁盘空间</li>
+<li>进程执行时，自以为独占了内存</li>
+<li>进程内存状态：通过swap到磁盘上进行保存</li>
+</ul></li>
+</ul></li>
+</ol>
+<h1 id="虚拟内存">虚拟内存</h1>
+<ol type="1">
+<li>独立的（进程）地址空间
+<ul>
+<li>给每个进程提供一个很大的、静态的"虚拟"内存空间</li>
+</ul></li>
+<li>虚实地址转换
+<ul>
+<li>进程运行时，每次访存通过地址转换获得实际的物理内存地址</li>
+</ul></li>
+<li>磁盘作为内存的延展（磁盘交换区）
+<ul>
+<li>按需加载：只装载部分地址空间到物理内存</li>
+</ul></li>
+</ol>
+<h2 id="地址空间">地址空间</h2>
+<ol type="1">
+<li>独立的进程地址空间 [0,MAX-1]
+<ul>
+<li>程序员能够看到的是虚地址</li>
+</ul></li>
+<li>运行时装载部分地址空间</li>
+<li>每次访存：虚地址-&gt;物理地址
+<ul>
+<li>CPU 和 进程 看到的是虚地址</li>
+<li>内存 和 I/O设备 看到的是物理地址</li>
+</ul></li>
+<li>如果访问到未装载的地址空间
+<ul>
+<li>通过OS将它加载进内存</li>
+</ul></li>
+</ol>
+<h2 id="虚存的好处">虚存的好处</h2>
+<ol type="1">
+<li>灵活
+<ul>
+<li>进程在执行时才会被放进内存，另一部分在内存/磁盘中</li>
+</ul></li>
+<li>简单
+<ul>
+<li>进程的内存访问变得简单</li>
+</ul></li>
+<li>高效
+<ul>
+<li>20/80原则：20%的地址空间承担了80%的访问</li>
+<li>将20%地址空间放进物理内存</li>
+</ul></li>
+<li>安全
+<ul>
+<li>虚实地址转换时进行安全检查，防止非法访问</li>
+</ul></li>
+</ol>
+<h1 id="地址映射">地址映射</h1>
+<h2 id="目标">目标</h2>
+<ol type="1">
+<li>隐式：对每个内存访问，转换是隐式的，用户程序不感知</li>
+<li>快速：有转换关系的时候，访存速度非常快</li>
+<li>例外：没有转换关系时会触发一个例外</li>
+<li>保护：能够隔离用户进程的错误</li>
+</ol>
+<h2 id="地址映射和粒度">地址映射和粒度</h2>
+<ol type="1">
+<li>需要某种"映射"机制
+<ul>
+<li>把虚地址空间（大）的内容 放进 物理内存空间（小）</li>
+</ul></li>
+<li>映射必须有合适的粒度
+<ul>
+<li>粒度决定灵活性</li>
+<li>大粒度映射可能造成内存浪费</li>
+<li>细粒度映射则需要更多的映射信息</li>
+</ul></li>
+<li>极端情况
+<ul>
+<li>字节粒度映射：映射表过大</li>
+<li>进程粒度映射：内存浪费</li>
+</ul></li>
+</ol>
+<h2 id="基址-长度cray-1中采用的方法">基址 +
+长度（Cray-1中采用的方法）</h2>
+<ol type="1">
+<li>连续分配
+<ul>
+<li>为每个进程分配地址连续的内存空间</li>
+<li>用一个二元组来限定其内存区域: &lt;base,bound&gt;</li>
+</ul></li>
+<li>保护
+<ul>
+<li>一个进程只能访问[base,base+bound]区间的内存</li>
+</ul></li>
+<li>上下文切换
+<ul>
+<li>保存/恢复 基址寄存器</li>
+</ul></li>
+<li>好处
+<ul>
+<li>简单：映射时将虚地址和基地址相加</li>
+<li>支持换出(swapping)：多进程并发执行</li>
+</ul></li>
+<li>坏处
+<ul>
+<li>外部碎片（进程间的碎片）</li>
+<li>难以支持进程增大</li>
+<li>难以共享内存</li>
+</ul></li>
+</ol>
+<blockquote>
+<p>内存碎片：随着进程的换入与换出，内存会产生很多空洞（未使用的小区域）</p>
+</blockquote>
+<h2 id="分段">分段</h2>
+<ol type="1">
+<li>不连续分配
+<ul>
+<li>把程序逻辑上划分为若干段：代码、全局变量、栈</li>
+<li>每个段分配连续内存，段间不必连续</li>
+<li>每个进程有一张段表</li>
+<li>每个段采用基址 + 长度</li>
+</ul></li>
+<li>保护
+<ul>
+<li>每个段有不同的权限（Read,Write,Exec)</li>
+</ul></li>
+<li>上下文切换
+<ul>
+<li>保存/恢复 段表和指向段表的内核指针</li>
+</ul></li>
+<li>好处
+<ul>
+<li>相比于基址 + 长度，资源使用更高效</li>
+<li>易共享</li>
+</ul></li>
+<li>不足
+<ul>
+<li>管理的复杂度增加</li>
+<li>仍然存在外部碎片（段间碎片）</li>
+</ul></li>
+</ol>
+<h3 id="虚实地址转换过程">虚实地址转换过程</h3>
+<p>Virtual Address = Seg# + Offset Seg# 通过 Segment Table 映射到
+Physical Address</p>
+<p>如果 offset &gt; 段Size， 则触发 Memory Violation异常
+如果访问地址所在的 Seg# 的 Valid 为0，则触发 Segment Fault异常</p>
+<h2 id="分页">分页</h2>
+<ol type="1">
+<li>分页机制
+<ul>
+<li>使用固定大小的映射单元</li>
+<li>把虚存划分成固定大小的单元（称为页 Page）</li>
+<li>把物理内存划分成同样大小的单元（称为页框 Page Frame）</li>
+<li>按需加载（On-Demand Paging）</li>
+</ul></li>
+<li>用页表来记录映射
+<ul>
+<li>虚页 -&gt; 物理页</li>
+</ul></li>
+<li>每个表项都有若干个控制位
+<ul>
+<li>按页进行保护（Read,Write,Exec)</li>
+</ul></li>
+<li>上下文切换
+<ul>
+<li>与分段类似，保存/恢复页表及其地址</li>
+</ul></li>
+<li>好处
+<ul>
+<li>分配简单</li>
+<li>易共享</li>
+</ul></li>
+<li>坏处
+<ul>
+<li>页表很大</li>
+<li>进程地址空间有很多空洞：对应的页表项没用</li>
+</ul></li>
+</ol>
+<h3 id="页表项">页表项</h3>
+<ol type="1">
+<li>表达一个映射关系（Page Table Entry，PTE）
+<ul>
+<li>虚页号 -&gt; 物理页号</li>
+</ul></li>
+<li>包含如下信息：
+<ul>
+<li>物理页框号</li>
+<li>有效位：标志该页是否在内存中</li>
+<li>保护位：标志该页的访问权限(Read,Write,Exec)</li>
+<li>修改位：标志该页是否被修改过</li>
+<li>访问位：标志该页是否被访问过</li>
+<li>缓存位</li>
+</ul></li>
+<li>PTE的数量
+<ul>
+<li>假设一页是 4K（12位页内偏移Offset）</li>
+<li>32位虚拟地址空间：2^32 = 4G = 4K * 1024
+<ul>
+<li>一个PTE的大小为32位 = 4B，故总共为 4MB</li>
+<li>如果有10K个进程，那么可能内存连页表都放不下</li>
+</ul></li>
+<li>64位虚拟地址空间：2^64 = 16EB = 4K * 1024 * 1024 * 1024
+<ul>
+<li>一个PTE的大小为64位 = 8B，故总共为 8TB</li>
+<li>内存连一个页表的大小都放不下</li>
+</ul></li>
+</ul></li>
+</ol>
+<h2 id="分段-分页">分段 + 分页</h2>
+<ol type="1">
+<li>先将进程划分为若干段</li>
+<li>每个段采用分页</li>
+<li>段表记录它的页表地址</li>
+<li>不足：仍然存在分段的不足</li>
+</ol>
+<h2 id="多级页表">多级页表</h2>
+<ol type="1">
+<li>虚地址除去 offset 之外的部分划分为多个段
+<ul>
+<li>每段对应一级页表</li>
+<li>多个页表</li>
+</ul></li>
+<li>好处：节省空间</li>
+</ol>
+<p>示例：二级页表</p>
+<ol type="1">
+<li>虚地址：32位，前10位为一级页表索引，中间10位为二级页表索引，后12位为页内偏移</li>
+<li>每个页表4KB，共有1024个页表项，下级页表每一项映射1页(4KB)，上级页表映射1024页(4MB)</li>
+<li>对于大地址空间，大部分程序都只需要几个页表</li>
+</ol>
+<h2 id="反向页表">反向页表</h2>
+<ol type="1">
+<li>基本逻辑
+<ul>
+<li>64位地址空间，4K页，共有2<sup>52个页；256MB物理内存，总共有2</sup>16个页框</li>
+<li>按物理页索引，记录每个物理页对应的进程ID及虚页</li>
+</ul></li>
+<li>主要思想
+<ul>
+<li>每个物理页对应一个PTE</li>
+<li>通过Hash查找进行地址转换（Hash(Vpage,pid) -&gt; Ppage#）</li>
+</ul></li>
+<li>好处
+<ul>
+<li>页表大小与地址空间大小无关，只与物理内存大小有关</li>
+<li>对于大地址空间，页表较小</li>
+</ul></li>
+<li>坏处
+<ul>
+<li>查找困难（Hash冲突）</li>
+<li>管理哈希链需要大量开销</li>
+</ul></li>
+</ol>
+<h1 id="mmu-和-tlb">MMU 和 TLB</h1>
+<h2 id="地址转换实现">地址转换实现</h2>
+<ol type="1">
+<li>地址类别
+<ul>
+<li>CPU发出的是虚地址</li>
+<li>内存和IO设备接收的是物理地址</li>
+</ul></li>
+<li>MMU（Memory Management Unit，内存管理单元）职责
+<ul>
+<li>负责虚地址到物理地址转换的硬件单元，通常在片内实现</li>
+<li>虚存地址转换到物理地址（每条Load 和 Store指令都需要地址转换）</li>
+<li>内存保护，检查地址是否有效</li>
+<li>特殊指令操作对应寄存器，记录Base/Bound，或者页目录</li>
+</ul></li>
+<li>操作系统职责
+<ul>
+<li>内存管理：新进程分配空间，结束的进程回收空间</li>
+<li>进程切换时上下文管理（RISC-V satp寄存器等）</li>
+<li>异常处理：内存越界访问、无效地址等</li>
+</ul></li>
+</ol>
+<h2 id="加速地址转换">加速地址转换</h2>
+<ol type="1">
+<li>程序只知道虚地址
+<ul>
+<li>每个程序或进程的地址空间是[0,max-1]</li>
+</ul></li>
+<li>每个虚地址必须要进行转换
+<ul>
+<li>可能需要逐级查找多级页表</li>
+<li>页表保存在内存中，一个内存访问可能变成多个内存访问</li>
+</ul></li>
+<li>解决办法
+<ul>
+<li>用速度更快的部件来缓存使用最频繁的那部分页表项</li>
+</ul></li>
+</ol>
+<h2
+id="tlbtranslation-look-aside-buffer地址转换旁路缓冲">TLB（Translation
+Look-aside Buffer，地址转换旁路缓冲）</h2>
+<blockquote>
+<p>TLB是一种页表的缓冲机制</p>
+</blockquote>
+<ol type="1">
+<li>共有的（必须的）位
+<ul>
+<li>VP#（虚页号）：与虚地址进行匹配</li>
+<li>PP#（物理页号）：转换后的实际地址</li>
+<li>Valid位：标志此表项是否有效</li>
+<li>访问控制位：运行内核/用户访问，以及允许何种访问（Read,Write）</li>
+</ul></li>
+<li>可选的（有用的）位
+<ul>
+<li>进程标签（pid）</li>
+<li>访问标签位（R位）</li>
+<li>修改标志位（M位）</li>
+<li>缓存标志位</li>
+</ul></li>
+</ol>
+<h3 id="tlb具体流程硬件和软件不同">TLB具体流程（硬件和软件不同）</h3>
+<ol type="1">
+<li>CPU先把一个虚地址VA给MMU进行转换</li>
+<li>MMU先查TLB: VA = VP# || offset
+<ul>
+<li>将该虚页号同时与TLB中所有的表项进行比较（硬件支持）</li>
+</ul></li>
+<li>TLB hit：TLB里找到含 VP# 的表项
+<ul>
+<li>如果有效（TLB的Valid位=1），取表项中的物理页号</li>
+<li>如果无效（TLB的Valid位=0），则等同于TLB miss</li>
+</ul></li>
+<li>如果TLB miss（不命中）：TLB中没有含有 VP# 的表项
+<ul>
+<li>MMU硬件在页表中进行查找，得到PTE /
+进入内核异常处理程序，软件在页表中进行查找，得到PTE</li>
+<li>将找到的PTE加载进TLB
+<ul>
+<li>如果没有空闲表项，则替换一个TLB表项</li>
+</ul></li>
+<li>获取TLB表项中的物理页号 / 重新执行TLB不命中的指令</li>
+</ul></li>
+</ol>
+<h3 id="硬件控制-vs-软件控制">硬件控制 vs 软件控制</h3>
+<ol type="1">
+<li>硬件控制
+<ul>
+<li>高效</li>
+<li>不灵活</li>
+</ul></li>
+<li>软件控制
+<ul>
+<li>简化 MMU 的逻辑，是的 CPU芯片上有更多面积可以用于缓存</li>
+<li>软件控制更加灵活</li>
+<li>可以使用反向页表进行映射，处理大的虚地址空间</li>
+</ul></li>
+</ol>
+<h3 id="tlb-设计问题">TLB 设计问题</h3>
+<ol type="1">
+<li>替换哪个TLB表项
+<ul>
+<li>伪随机 或 LRU算法</li>
+</ul></li>
+<li>上下文切换时需要做什么
+<ul>
+<li>有进程标签：修改TLB寄存器和进程寄存器的内容</li>
+<li>无进程标签：将整个TLB的内容置于无效</li>
+</ul></li>
+<li>修改一个页表项时需要做什么
+<ul>
+<li>修改内存中的PTE</li>
+<li>将对应的TLB表项置于无效（刷新TLB）</li>
+</ul></li>
+<li>TLB的大小
+<ul>
+<li>很小的TLB（64项），能够有很好的TLB命中率</li>
+<li>不能太大（不超过256项），CPU的面积有限</li>
+</ul></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div class="post-widgets">
+      <div id="needsharebutton-postbottom">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    </div>
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>JamesYu
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="https://blog.jamesyuuu.me/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E8%99%9A%E5%AD%98%E5%92%8C%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2/" title="虚存和地址转换">https://blog.jamesyuuu.me/操作系统/虚存和地址转换/</a>
+  </li>
+  <li class="post-copyright-license">
+      <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzQuMC9kZWVkLnpo"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</span> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E7%AC%94%E8%AE%B0/" rel="tag"><i class="fa fa-tag"></i> 笔记</a>
+              <a href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag"><i class="fa fa-tag"></i> 操作系统</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1/" rel="prev" title="进程间通信">
+                  <i class="fa fa-angle-left"></i> 进程间通信
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E6%8C%89%E9%9C%80%E5%8A%A0%E8%BD%BD%E4%B8%8E%E9%A1%B5%E6%9B%BF%E6%8D%A2/" rel="next" title="按需加载与页替换">
+                  按需加载与页替换 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments" id="lv-container" data-id="city" data-uid="MTAyMC81NTk2Mi8zMjQyNQ"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 2022 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">JamesYu</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">64k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">3:52</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <span class="exturl" data-url="aHR0cHM6Ly9oZXhvLmlv">Hexo</span> & <span class="exturl" data-url="aHR0cHM6Ly90aGVtZS1uZXh0LmpzLm9yZw==">NexT.Gemini</span> 强力驱动
+  </div>
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/gh/stevenjoezhang/live2d-widget@latest/autoload.js"></script>
+  </footer>
+
+  
+  <script size="300" alpha="0.6" zIndex="-1" src="https://cdn.jsdelivr.net/npm/ribbon.js@1.0.2/dist/ribbon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script><script src="/js/bookmark.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.2.12/pdfobject.min.js","integrity":"sha256-g2xji1rlE3KsGVClvuxTbcR0Kn2+wtQADSff2Tbb4zA="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@10.5.0/dist/mermaid.min.js","integrity":"sha256-K7oJiQlDulzl24ZUFOywuYme1JqBBvQzK6m8qHjt9Gk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+
+
+  <script src="/js/third-party/pace.js"></script>
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/darkmode-js@1.5.7/lib/darkmode-js.min.js"></script>
+
+<script>
+var options = {
+  bottom: '64px',
+  right: '32px',
+  left: 'unset',
+  time: '0.5s',
+  mixColor: 'transparent',
+  backgroundColor: 'transparent',
+  buttonColorDark: '#100f2c',
+  buttonColorLight: '#fff',
+  saveInCookies: true,
+  label: '🌓',
+  autoMatchOsTheme: true
+}
+const darkmode = new Darkmode(options);
+window.darkmode = darkmode;
+darkmode.showWidget();
+</script>
+
+  <script src="//cdn.jsdelivr.net/gh/theme-next/theme-next-needmoreshare2@1/needsharebutton.min.js"></script>
+  <script>
+      pbOptions = {};
+        pbOptions.iconStyle = "box";
+        pbOptions.boxForm = "horizontal";
+        pbOptions.position = "bottomCenter";
+        pbOptions.networks = "Weibo,Wechat,Douban,QQZone,Twitter,Facebook";
+      new needShareButton('#needsharebutton-postbottom', pbOptions);
+  </script><script src="/js/third-party/comments/livere.js"></script>
+
+</body>
+</html>
