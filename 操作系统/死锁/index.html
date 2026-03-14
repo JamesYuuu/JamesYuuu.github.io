@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="baidu-site-verification" content="PTwOehQpzZ">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.2/css/all.min.css" integrity="sha256-CTSx/A06dm1B063156EVh15m6Y67pAjZZaQc89LLSrU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/themes/blue/pace-theme-minimal.css">
+  <script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous"></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"blog.jamesyuuu.me","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.2","exturl":true,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":true,"style":"default"},"fold":{"enable":false,"height":500},"bookmark":{"enable":true,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":true,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="死锁的条件 共享资源访问 锁机制  锁获取：是一个原子操作；一个进程获得锁后，其他进程等待 锁释放：锁释放后，请求锁的某一个进程可以获得锁 锁的原子性：通过进入临界区的原子性保证锁的原子性  资源持有与请求  当资源持有与请求图中形成环路，则代表形成死锁  例如：进程A持有资源R，进程B持有资源S。A在持有R的时候请求S，而B在持有S的时候请求R，这样就导致了死锁。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="死锁">
+<meta property="og:url" content="https://blog.jamesyuuu.me/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E6%AD%BB%E9%94%81/index.html">
+<meta property="og:site_name" content="JamesYu&#39;s Hut">
+<meta property="og:description" content="死锁的条件 共享资源访问 锁机制  锁获取：是一个原子操作；一个进程获得锁后，其他进程等待 锁释放：锁释放后，请求锁的某一个进程可以获得锁 锁的原子性：通过进入临界区的原子性保证锁的原子性  资源持有与请求  当资源持有与请求图中形成环路，则代表形成死锁  例如：进程A持有资源R，进程B持有资源S。A在持有R的时候请求S，而B在持有S的时候请求R，这样就导致了死锁。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-10-18T14:16:18.000Z">
+<meta property="article:modified_time" content="2026-03-14T13:09:32.402Z">
+<meta property="article:author" content="JamesYu">
+<meta property="article:tag" content="笔记">
+<meta property="article:tag" content="操作系统">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://blog.jamesyuuu.me/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E6%AD%BB%E9%94%81/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://blog.jamesyuuu.me/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E6%AD%BB%E9%94%81/","path":"操作系统/死锁/","title":"死锁"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>死锁 | JamesYu's Hut</title>
+  
+
+
+
+
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/gh/theme-next/theme-next-needmoreshare2@1/needsharebutton.min.css"><style>
+#needsharebutton-postbottom {
+  cursor: pointer;
+  height: 26px;
+  margin-top: 10px;
+  position: relative;
+}
+#needsharebutton-postbottom .btn {
+  border: 1px solid $btn-default-border-color;
+  border-radius: 3px;
+  display: initial;
+  padding: 1px 4px;
+}
+</style>
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css">
+<style>.darkmode--activated{--body-bg-color:#282828;--content-bg-color:#333;--card-bg-color:#555;--text-color:#ccc;--blockquote-color:#bbb;--link-color:#ccc;--link-hover-color:#eee;--brand-color:#ddd;--brand-hover-color:#ddd;--table-row-odd-bg-color:#282828;--table-row-hover-bg-color:#363636;--menu-item-bg-color:#555;--btn-default-bg:#222;--btn-default-color:#ccc;--btn-default-border-color:#555;--btn-default-hover-bg:#666;--btn-default-hover-color:#ccc;--btn-default-hover-border-color:#666;--highlight-background:#282b2e;--highlight-foreground:#a9b7c6;--highlight-gutter-background:#34393d;--highlight-gutter-foreground:#9ca9b6}.darkmode--activated img{opacity:.75}.darkmode--activated img:hover{opacity:.9}.darkmode--activated code{color:#69dbdc;background:0 0}button.darkmode-toggle{z-index:9999}.darkmode-ignore,img{display:flex!important}.beian img{display:inline-block!important}</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">JamesYu's Hut</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Game | Bangumi</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">7</span></a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">3</span></a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">36</span></a></li><li class="menu-item menu-item-观影"><a href="/movies/index.html" rel="section"><i class="fa fa-film fa-fw"></i>观影</a></li><li class="menu-item menu-item-追番"><a href="/bangumis/index.html" rel="section"><i class="fa fa-video-camera fa-fw"></i>追番</a></li><li class="menu-item menu-item-追剧"><a href="/cinemas/index.html" rel="section"><i class="fa fa-television fa-fw"></i>追剧</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%AD%BB%E9%94%81%E7%9A%84%E6%9D%A1%E4%BB%B6"><span class="nav-number">1.</span> <span class="nav-text">死锁的条件</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B1%E4%BA%AB%E8%B5%84%E6%BA%90%E8%AE%BF%E9%97%AE"><span class="nav-number">1.1.</span> <span class="nav-text">共享资源访问</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%94%81%E6%9C%BA%E5%88%B6"><span class="nav-number">1.1.1.</span> <span class="nav-text">锁机制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B5%84%E6%BA%90%E6%8C%81%E6%9C%89%E4%B8%8E%E8%AF%B7%E6%B1%82"><span class="nav-number">1.1.2.</span> <span class="nav-text">资源持有与请求</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AD%BB%E9%94%81"><span class="nav-number">1.1.3.</span> <span class="nav-text">死锁</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AE%9A%E4%B9%89"><span class="nav-number">1.1.3.1.</span> <span class="nav-text">定义</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%BD%B1%E5%93%8D"><span class="nav-number">1.1.3.2.</span> <span class="nav-text">影响</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%8E%E9%A5%A5%E9%A5%BF%E7%9A%84%E5%85%B3%E7%B3%BB"><span class="nav-number">1.1.3.3.</span> <span class="nav-text">与饥饿的关系</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AD%BB%E9%94%81%E7%9A%84%E5%BF%85%E8%A6%81%E6%9D%A1%E4%BB%B6"><span class="nav-number">1.1.4.</span> <span class="nav-text">死锁的必要条件</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BA%92%E6%96%A5"><span class="nav-number">1.1.4.1.</span> <span class="nav-text">互斥</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8D%A0%E6%9C%89%E4%B8%94%E7%AD%89%E5%BE%85"><span class="nav-number">1.1.4.2.</span> <span class="nav-text">占有且等待</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%8D%E5%8F%AF%E6%8A%A2%E5%8D%A0"><span class="nav-number">1.1.4.3.</span> <span class="nav-text">不可抢占</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%8E%AF%E8%B7%AF%E7%AD%89%E5%BE%85"><span class="nav-number">1.1.4.4.</span> <span class="nav-text">环路等待</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%A4%84%E7%90%86%E6%AD%BB%E9%94%81%E7%9A%84%E7%AD%96%E7%95%A5"><span class="nav-number">2.</span> <span class="nav-text">处理死锁的策略</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BF%BD%E7%95%A5%E9%97%AE%E9%A2%98%E9%B8%B5%E9%B8%9F%E7%AE%97%E6%B3%95"><span class="nav-number">2.1.</span> <span class="nav-text">忽略问题（鸵鸟算法）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A3%80%E6%B5%8B%E5%B9%B6%E6%81%A2%E5%A4%8D"><span class="nav-number">2.2.</span> <span class="nav-text">检测并恢复</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%A3%80%E6%B5%8B"><span class="nav-number">2.2.0.1.</span> <span class="nav-text">检测</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%81%A2%E5%A4%8D"><span class="nav-number">2.2.0.2.</span> <span class="nav-text">恢复</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%81%BF%E5%85%8D"><span class="nav-number">2.3.</span> <span class="nav-text">避免</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E5%85%A8%E7%8A%B6%E6%80%81"><span class="nav-number">2.3.1.</span> <span class="nav-text">安全状态</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E5%85%A8%E7%8A%B6%E6%80%81%E5%88%A4%E6%96%AD"><span class="nav-number">2.3.2.</span> <span class="nav-text">安全状态判断</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%93%B6%E8%A1%8C%E5%AE%B6%E7%AE%97%E6%B3%95"><span class="nav-number">2.3.3.</span> <span class="nav-text">银行家算法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%93%B6%E8%A1%8C%E5%AE%B6%E7%AE%97%E6%B3%95%E7%9A%84%E6%8F%8F%E8%BF%B0"><span class="nav-number">2.3.3.1.</span> <span class="nav-text">银行家算法的描述</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%A2%84%E9%98%B2"><span class="nav-number">2.4.</span> <span class="nav-text">预防</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%81%BF%E5%85%8D%E4%BA%92%E6%96%A5"><span class="nav-number">2.4.1.</span> <span class="nav-text">避免互斥</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%81%BF%E5%85%8D%E5%8D%A0%E6%9C%89%E5%92%8C%E7%AD%89%E5%BE%85"><span class="nav-number">2.4.2.</span> <span class="nav-text">避免占有和等待</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%81%E8%AE%B8%E6%8A%A2%E5%8D%A0"><span class="nav-number">2.4.3.</span> <span class="nav-text">允许抢占</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%87%8F%E5%B0%91%E6%8A%A2%E5%8D%A0%E5%B8%A6%E6%9D%A5%E7%9A%84%E5%BC%80%E9%94%80"><span class="nav-number">2.4.3.1.</span> <span class="nav-text">减少抢占带来的开销</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%81%BF%E5%85%8D%E7%8E%AF%E8%B7%AF%E7%AD%89%E5%BE%85"><span class="nav-number">2.4.4.</span> <span class="nav-text">避免环路等待</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9D%83%E8%A1%A1%E5%92%8C%E5%BA%94%E7%94%A8"><span class="nav-number">2.5.</span> <span class="nav-text">权衡和应用</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="JamesYu"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">JamesYu</p>
+  <div class="site-description" itemprop="description">A Game and Bangumi Database For Private Use</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">36</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL0phbWVzWXV1dQ==" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;JamesYuuu"><i class="fab fa-github fa-fw"></i>GitHub</span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9pbnN0YWdyYW0uY29tL2phbWVzeXUzMg==" title="Instagram → https:&#x2F;&#x2F;instagram.com&#x2F;jamesyu32"><i class="fab fa-instagram fa-fw"></i>Instagram</span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly9zcGFjZS5iaWxpYmlsaS5jb20vMTgyODA5NTQ5" title="Bilibili → https:&#x2F;&#x2F;space.bilibili.com&#x2F;182809549"><i class="fab fa-bilibili fa-fw"></i>Bilibili</span>
+      </span>
+      <span class="links-of-author-item">
+        <span class="exturl" data-url="aHR0cHM6Ly93d3cuemhpaHUuY29tL3Blb3BsZS95aWdlLWRhLXNodWFpLWJpLTQw" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;yige-da-shuai-bi-40"><i class="fab fa-zhihu fa-fw"></i>Zhihu</span>
+      </span>
+  </div>
+  <div class="cc-license animated" itemprop="license">
+    <span class="exturl cc-opacity" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzQuMC9kZWVkLnpo"><img src="https://cdn.jsdelivr.net/npm/@creativecommons/vocabulary@2020.11.3/assets/license_badges/small/by_nc_sa.svg" alt="Creative Commons"></span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+  <span class="exturl github-corner" data-url="aHR0cHM6Ly9naXRodWIuY29tL0phbWVzWXV1dQ==" title="在 GitHub 上关注我" aria-label="在 GitHub 上关注我"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></span>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://blog.jamesyuuu.me/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E6%AD%BB%E9%94%81/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="JamesYu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="JamesYu's Hut">
+      <meta itemprop="description" content="A Game and Bangumi Database For Private Use">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="死锁 | JamesYu's Hut">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          死锁<span class="exturl post-edit-link" data-url="aHR0cHM6Ly9naXRodWIuY29tL0phbWVzWXV1dS9IZXhvLUJsb2cvdHJlZS9tYWluL3NvdXJjZS9fcG9zdHMv5pON5L2c57O757ufL+atu+mUgS5tZA==" title="编辑"><i class="fa fa-pen-nib"></i></span>
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2022-10-18 22:16:18" itemprop="dateCreated datePublished" datetime="2022-10-18T22:16:18+08:00">2022-10-18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-03-14 21:09:32" itemprop="dateModified" datetime="2026-03-14T21:09:32+08:00">2026-03-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Study/" itemprop="url" rel="index"><span itemprop="name">Study</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>1.6k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>6 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="死锁的条件">死锁的条件</h1>
+<h2 id="共享资源访问">共享资源访问</h2>
+<h3 id="锁机制">锁机制</h3>
+<ul>
+<li>锁获取：是一个原子操作；一个进程获得锁后，其他进程等待</li>
+<li>锁释放：锁释放后，请求锁的某一个进程可以获得锁</li>
+<li>锁的原子性：通过进入临界区的原子性保证锁的原子性</li>
+</ul>
+<h3 id="资源持有与请求">资源持有与请求</h3>
+<blockquote>
+<p>当资源持有与请求图中形成环路，则代表形成死锁</p>
+</blockquote>
+<p>例如：进程A持有资源R，进程B持有资源S。A在持有R的时候请求S，而B在持有S的时候请求R，这样就导致了死锁。</p>
+<span id="more"></span>
+<h3 id="死锁">死锁</h3>
+<blockquote>
+<p>在讨论死锁的时候，进程和线程等价！</p>
+</blockquote>
+<h4 id="定义">定义</h4>
+<p>两个或两个以上进程/线程在执行过程中，因争夺资源而造成的一种相互等待的现象。</p>
+<h4 id="影响">影响</h4>
+<ul>
+<li>发生死锁的进程/线程无法执行</li>
+<li>被占有的资源无法释放</li>
+<li>浪费系统资源，降低了系统性能</li>
+</ul>
+<h4 id="与饥饿的关系">与饥饿的关系</h4>
+<ul>
+<li><strong>饥饿</strong>：进程无限等待</li>
+<li>死锁可能导致饥饿</li>
+</ul>
+<h3 id="死锁的必要条件">死锁的必要条件</h3>
+<h4 id="互斥">互斥</h4>
+<ul>
+<li>某个资源在一段时间内只能由一个进程占有，且其他进程无法访问</li>
+</ul>
+<h4 id="占有且等待">占有且等待</h4>
+<ul>
+<li>一个进程占有资源，同时请求新资源</li>
+<li>新资源被其他进程占有，进程等待资源被释放</li>
+</ul>
+<h4 id="不可抢占">不可抢占</h4>
+<ul>
+<li>资源不可被抢占，只能由占有者主动释放</li>
+</ul>
+<h4 id="环路等待">环路等待</h4>
+<ul>
+<li>多个进程以环路的方式进行等待</li>
+</ul>
+<h1 id="处理死锁的策略">处理死锁的策略</h1>
+<h2 id="忽略问题鸵鸟算法">忽略问题（鸵鸟算法）</h2>
+<blockquote>
+<p>认为产生死锁是用户的错</p>
+</blockquote>
+<ul>
+<li>操作系统内核死锁
+<ul>
+<li>重启</li>
+</ul></li>
+<li>设备驱动死锁
+<ul>
+<li>卸载设备是否重启</li>
+</ul></li>
+<li>应用程序死锁（程序挂起或“不响应”）
+<ul>
+<li>方法一：杀死并重启程序</li>
+<li>方法二：给程序设定一个<code>checkpoint</code>；在改变运行环境后，从上一个<code>checkpoint</code>重新开始</li>
+</ul></li>
+</ul>
+<h2 id="检测并恢复">检测并恢复</h2>
+<h4 id="检测">检测</h4>
+<ul>
+<li>扫描资源分配图，检测环路</li>
+</ul>
+<h4 id="恢复">恢复</h4>
+<ul>
+<li>杀死进程/线程
+<ul>
+<li>全部终止或逐个终止</li>
+</ul></li>
+<li>有时需要回滚死锁线程（例如数据库）
+<ul>
+<li>代价大</li>
+</ul></li>
+</ul>
+<h2 id="避免">避免</h2>
+<h3 id="安全状态">安全状态</h3>
+<ul>
+<li>未发生死锁</li>
+<li>存在一个调度方案
+<ul>
+<li>使得所有进程能够按照某一次序分配资源，依次运行完成</li>
+<li>且满足所有进程同时请求最大资源</li>
+</ul></li>
+</ul>
+<h3 id="安全状态判断">安全状态判断</h3>
+<blockquote>
+<p>核心思想：寻找一个使系统安全的进程资源分配序列</p>
+</blockquote>
+<ol type="1">
+<li>初始化
+<ul>
+<li>当前可用资源：<code>Available</code>；进程需求资源：<code>Need</code><br />
+</li>
+<li>进程已分配资源：<code>Allocation</code>；进程完成标记：<code>Finish=true</code></li>
+</ul></li>
+<li>寻找一个进程<code>Ti</code>，满足<code>Need&lt;=Available &amp; Finish=False</code>，否则执行4</li>
+<li>执行进程<code>Ti</code>，完成后释放所有资源，更新如下信息，重复2
+<ul>
+<li>Available+=Allocation</li>
+<li>Finish=True</li>
+</ul></li>
+<li>若此时所有进程的<code>Finish=True</code>，则系统安全，否则系统不安全</li>
+</ol>
+<h3 id="银行家算法">银行家算法</h3>
+<blockquote>
+<p>核心思想：再分配资源前，假设已经给资源做了分配，若分配后保证系统处于安全状态，则分配</p>
+</blockquote>
+<ul>
+<li>单个资源
+<ul>
+<li>每个进程都有一个资源需求</li>
+<li>总的资源可能不能满足所有的资源需求</li>
+<li>跟踪已分配的资源和仍然需要的资源</li>
+<li><strong>每次进程请求资源时，系统分配前检查安全性</strong></li>
+</ul></li>
+<li>多个资源
+<ul>
+<li><code>n</code>代表线程数量，<code>m</code>代表资源类型数量，<code>i</code>代表线程编号，<code>j</code>代表资源编号</li>
+<li><code>Available</code>（剩余空闲量）：长度为m的向量</li>
+<li><code>Allocation</code>（已分配量）：大小为<span
+class="math inline">\(n\times m\)</span>的矩阵</li>
+<li><code>Need</code>（未来需要量）：大小为<span
+class="math inline">\(n\times m\)</span>的矩阵
+<ul>
+<li><span
+class="math inline">\(Need[i,j]=Max[i,j]-Allocation[i,j]\)</span></li>
+</ul></li>
+</ul></li>
+</ul>
+<h4 id="银行家算法的描述">银行家算法的描述</h4>
+<ol start="0" type="1">
+<li>初始化<span
+class="math inline">\(Request_i[j]\)</span>代表线程<code>Ti</code>请求资源<code>Rj</code>的实例</li>
+</ol>
+<p>循环处理线程<code>Ti</code></p>
+<ol type="1">
+<li>如果<span class="math inline">\(Request_i \leq
+Need[i]\)</span>，则跳转到步骤2。否则拒绝资源申请，因为线程请求的资源已经超过了其最大的要求</li>
+<li>如果<span class="math inline">\(Request_i \leq
+Available\)</span>，则跳转到步骤3。否则该线程必需等待，因为当前资源不足</li>
+<li>假设资源已经分配给了<code>Ti</code>，执行如下<code>what-if</code>判断，进行如下更新计算</li>
+</ol>
+
+$$
+Available=Available-Request_i \\\\
+Allocation[i]=Allocation[i]+Request_i \\\\
+Need[i]=Need[i]-Request_i
+$$
+
+<ol start="4" type="1">
+<li>调用安全状态判断此时系统是否安全
+<ul>
+<li>若返回结果是安全，则将资源分配给<code>Ti</code></li>
+<li>若返回结果是不安全，系统则拒绝<code>Ti</code>的资源请求</li>
+</ul></li>
+</ol>
+<h2 id="预防">预防</h2>
+<blockquote>
+<p>消除死锁四个必要条件中的一个</p>
+</blockquote>
+<h3 id="避免互斥">避免互斥</h3>
+<ul>
+<li>资源设计成可共享，不用互斥
+<ul>
+<li>只读文件、只读内存、读/写锁等</li>
+<li><strong>缺点：</strong>有些资源必须互斥访问</li>
+</ul></li>
+<li>增加资源
+<ul>
+<li>使用临时缓存，使得一个资源看起来像有多个资源（虚拟化）</li>
+<li>使用队列进行调度</li>
+</ul></li>
+<li>Lock-Free设计
+<ul>
+<li>使用原子操作，例如<code>CAS指令</code></li>
+</ul></li>
+</ul>
+<h3 id="避免占有和等待">避免占有和等待</h3>
+<blockquote>
+<p>采用两阶段加锁的策略</p>
+</blockquote>
+<ul>
+<li><strong>阶段一</strong>：试图对所有所需的资源进行加锁</li>
+<li><strong>阶段二</strong>：
+<ul>
+<li>如果成功则使用资源，然后释放资源</li>
+<li>否则释放所有资源，再从头开始</li>
+</ul></li>
+</ul>
+<h3 id="允许抢占">允许抢占</h3>
+<blockquote>
+<p>使调度器了解资源分配情况</p>
+</blockquote>
+<ul>
+<li>方法一：
+<ul>
+<li>如果系统无法满足一个已占有资源的进程的请求，则抢占该进程并释放所有资源</li>
+<li>只在系统能满足所有资源时在进行调度</li>
+</ul></li>
+<li>方法二
+<ul>
+<li>抢占正占有被请求的资源的进程</li>
+</ul></li>
+</ul>
+<h4 id="减少抢占带来的开销">减少抢占带来的开销</h4>
+<ul>
+<li>将已完成工作（例如数据、状态等）复制到一个缓冲区，再释放资源</li>
+</ul>
+<h3 id="避免环路等待">避免环路等待</h3>
+<blockquote>
+<p>对所有资源制定请求顺序</p>
+</blockquote>
+<ul>
+<li>方法一：
+<ul>
+<li>对每个资源分配唯一的id</li>
+<li>所有请求必须按照id升序提出</li>
+</ul></li>
+<li>方法二：
+<ul>
+<li>对每个资源分配唯一的id</li>
+<li>进程不能请求比当前所占有资源编号低的资源</li>
+<li>占用高资源标号的进程需要释放资源</li>
+</ul></li>
+</ul>
+<h2 id="权衡和应用">权衡和应用</h2>
+<ul>
+<li>死锁处理
+<ul>
+<li>处理死锁是应用开发者的工作</li>
+<li>OS应该要提供打破应用程序死锁的机制</li>
+</ul></li>
+<li>内核不应该出现死锁
+<ul>
+<li>使用预防方法</li>
+<li><strong>流行做法：</strong>在所有地方使用避免环路等待原则</li>
+</ul></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer"><div class="post-widgets">
+      <div id="needsharebutton-postbottom">
+        <span class="btn">
+          <i class="fa fa-share-alt" aria-hidden="true"></i>
+        </span>
+      </div>
+    </div>
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>JamesYu
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="https://blog.jamesyuuu.me/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E6%AD%BB%E9%94%81/" title="死锁">https://blog.jamesyuuu.me/操作系统/死锁/</a>
+  </li>
+  <li class="post-copyright-license">
+      <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzQuMC9kZWVkLnpo"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</span> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E7%AC%94%E8%AE%B0/" rel="tag"><i class="fa fa-tag"></i> 笔记</a>
+              <a href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag"><i class="fa fa-tag"></i> 操作系统</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E4%B8%B4%E7%95%8C%E5%8C%BA%E4%B8%8E%E5%8E%9F%E5%AD%90%E6%93%8D%E4%BD%9C/" rel="prev" title="临界区与原子操作">
+                  <i class="fa fa-angle-left"></i> 临界区与原子操作
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E4%BF%A1%E5%8F%B7%E9%87%8F%E4%B8%8E%E7%AE%A1%E7%A8%8B/" rel="next" title="信号量与管程">
+                  信号量与管程 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments" id="lv-container" data-id="city" data-uid="MTAyMC81NTk2Mi8zMjQyNQ"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 2022 – 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">JamesYu</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">64k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">3:52</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <span class="exturl" data-url="aHR0cHM6Ly9oZXhvLmlv">Hexo</span> & <span class="exturl" data-url="aHR0cHM6Ly90aGVtZS1uZXh0LmpzLm9yZw==">NexT.Gemini</span> 强力驱动
+  </div>
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/gh/stevenjoezhang/live2d-widget@latest/autoload.js"></script>
+  </footer>
+
+  
+  <script size="300" alpha="0.6" zIndex="-1" src="https://cdn.jsdelivr.net/npm/ribbon.js@1.0.2/dist/ribbon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script><script src="/js/bookmark.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.1/dist/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+  <script class="next-config" data-name="pdf" type="application/json">{"object_url":{"url":"https://cdn.jsdelivr.net/npm/pdfobject@2.2.12/pdfobject.min.js","integrity":"sha256-g2xji1rlE3KsGVClvuxTbcR0Kn2+wtQADSff2Tbb4zA="},"url":"/lib/pdf/web/viewer.html"}</script>
+  <script src="/js/third-party/tags/pdf.js"></script>
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@10.5.0/dist/mermaid.min.js","integrity":"sha256-K7oJiQlDulzl24ZUFOywuYme1JqBBvQzK6m8qHjt9Gk="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+
+
+  <script src="/js/third-party/pace.js"></script>
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/darkmode-js@1.5.7/lib/darkmode-js.min.js"></script>
+
+<script>
+var options = {
+  bottom: '64px',
+  right: '32px',
+  left: 'unset',
+  time: '0.5s',
+  mixColor: 'transparent',
+  backgroundColor: 'transparent',
+  buttonColorDark: '#100f2c',
+  buttonColorLight: '#fff',
+  saveInCookies: true,
+  label: '🌓',
+  autoMatchOsTheme: true
+}
+const darkmode = new Darkmode(options);
+window.darkmode = darkmode;
+darkmode.showWidget();
+</script>
+
+  <script src="//cdn.jsdelivr.net/gh/theme-next/theme-next-needmoreshare2@1/needsharebutton.min.js"></script>
+  <script>
+      pbOptions = {};
+        pbOptions.iconStyle = "box";
+        pbOptions.boxForm = "horizontal";
+        pbOptions.position = "bottomCenter";
+        pbOptions.networks = "Weibo,Wechat,Douban,QQZone,Twitter,Facebook";
+      new needShareButton('#needsharebutton-postbottom', pbOptions);
+  </script><script src="/js/third-party/comments/livere.js"></script>
+
+</body>
+</html>
